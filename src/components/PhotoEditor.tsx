@@ -1,6 +1,7 @@
 import { MAX_UPLOAD_BYTES } from "@rules";
 import { useEffect, useRef, useState } from "react";
-import { Button, ErrorText } from "./ui";
+import { Icon } from "./Icon";
+import { Button, Dots, ErrorText } from "./ui";
 
 const MAX_SIDE = 1280;
 
@@ -55,18 +56,18 @@ export function PhotoEditor({ onDone, busy }: { onDone: (jpeg: Blob) => void; bu
       <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
       <input ref={gallery} type="file" accept="image/*" hidden onChange={pick} />
       {preview ? (
-        <img src={preview} alt="Ta photo" className="max-h-96 w-full rounded-2xl object-contain bg-night/60" />
+        <img src={preview} alt="Ta photo" className="max-h-96 w-full rotate-[-0.8deg] border-[6px] border-lettre bg-lettre object-contain shadow-[0_10px_20px_-14px_rgba(31,47,74,.6)]" />
       ) : (
-        <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-night/60 text-6xl ring-2 ring-white/10 ring-dashed">
-          {working ? "⏳" : "📷"}
+        <div className="flex aspect-[4/3] items-center justify-center rounded-md border-2 border-dashed border-encre/35 bg-papier/60 text-encre/60">
+          {working ? <Dots /> : <Icon name="photo" size={64} strokeWidth={1.4} />}
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={() => camera.current?.click()} disabled={working || busy}>
-          📸 Prendre
+          <Icon name="photo" size={20} /> Prendre
         </Button>
         <Button variant="secondary" onClick={() => gallery.current?.click()} disabled={working || busy}>
-          🖼️ Galerie
+          <Icon name="galerie" size={20} /> Galerie
         </Button>
       </div>
       <ErrorText>{error}</ErrorText>

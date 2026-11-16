@@ -1,6 +1,7 @@
 import { normalizeRoomCode } from "@rules";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { Icon } from "../components/Icon";
 import { Button, Card, ErrorText, Screen } from "../components/ui";
 import { actions } from "../lib/actions";
 
@@ -22,7 +23,7 @@ export function Home({ initialCode, onEnter }: { initialCode: string; onEnter: (
 
   const run = async (kind: "create" | "join") => {
     const n = name.trim();
-    if (!n) return setError("Choisis un pseudo.");
+    if (!n) return setError("Écris ton prénom.");
     if (kind === "join" && normalizeRoomCode(code).length !== 4) return setError("Le code fait 4 lettres.");
     try {
       localStorage.setItem(NAME_KEY, n);
@@ -42,31 +43,33 @@ export function Home({ initialCode, onEnter }: { initialCode: string; onEnter: (
 
   return (
     <Screen>
-      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="pb-2 pt-8 text-center">
-        <div className="text-6xl">💞</div>
-        <h1 className="mt-3 font-display text-4xl font-bold">Devine la question</h1>
-        <p className="mt-2 text-muted">Le jeu à deux pour se sentir proches, même à distance.</p>
+      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative pt-10 pb-2 text-center">
+        <div className="timbre absolute top-2 right-1 flex h-16 w-14 rotate-[6deg] items-center justify-center" aria-hidden>
+          <Icon name="coeur" size={30} />
+        </div>
+        <h1 className="titre text-[38px] leading-tight sm:text-[52px]">Devine la question</h1>
+        <p className="mt-3 text-lg text-muted italic">Un carnet de jeu qu'on s'envoie à deux, pour se sentir proches malgré la distance.</p>
       </motion.header>
 
-      <Card className="flex flex-col gap-3">
-        <label className="text-sm font-bold text-muted" htmlFor="name">
-          Ton pseudo
+      <Card tilt={-0.4} className="flex flex-col gap-3">
+        <label className="font-display text-lg font-bold" htmlFor="name">
+          Ton prénom
         </label>
         <input
           id="name"
           value={name}
           maxLength={20}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Lou"
-          className="rounded-2xl bg-night/70 px-4 py-3 text-lg outline-none ring-2 ring-white/10 focus:ring-rose"
+          placeholder="Camille"
+          className="champ px-4 py-3 text-lg"
         />
         <Button onClick={() => run("create")} busy={busy === "create"} disabled={busy !== null}>
-          Créer une partie
+          Ouvrir un carnet
         </Button>
       </Card>
 
-      <Card className="flex flex-col gap-3">
-        <label className="text-sm font-bold text-muted" htmlFor="code">
+      <Card tilt={0.5} className="flex flex-col gap-3">
+        <label className="font-display text-lg font-bold" htmlFor="code">
           Rejoindre avec un code
         </label>
         <div className="flex gap-2">
@@ -78,7 +81,7 @@ export function Home({ initialCode, onEnter }: { initialCode: string; onEnter: (
             placeholder="ABCD"
             autoCapitalize="characters"
             autoComplete="off"
-            className="min-w-0 flex-1 rounded-2xl bg-night/70 px-4 py-3 text-center font-display text-2xl tracking-[0.4em] uppercase outline-none ring-2 ring-white/10 focus:ring-rose"
+            className="champ min-w-0 flex-1 px-4 py-2 text-center font-display text-3xl font-bold tracking-[0.35em] uppercase"
           />
           <Button variant="secondary" className="!w-auto" onClick={() => run("join")} busy={busy === "join"} disabled={busy !== null}>
             Rejoindre

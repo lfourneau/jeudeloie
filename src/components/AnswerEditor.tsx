@@ -4,6 +4,7 @@ import { actions } from "../lib/actions";
 import { DrawingEditor } from "./DrawingEditor";
 import { GifPicker, MusicPicker } from "./MediaPicker";
 import { PhotoEditor } from "./PhotoEditor";
+import { Icon } from "./Icon";
 import { Button, ErrorText, MEDIA_LABEL } from "./ui";
 
 const EMOJI_GROUPS: { name: string; list: string }[] = [
@@ -105,10 +106,10 @@ function TextEditor({ media, onSubmit }: { media: "mot" | "nombre" | "emojis"; o
           placeholder={effective === "nombre" ? "42" : "Ton mot"}
           autoComplete="off"
           autoCapitalize="off"
-          className="w-full rounded-2xl bg-night/70 px-4 py-4 text-center font-display text-3xl font-semibold text-ink outline-none ring-2 ring-white/10 focus:ring-rose"
+          className="champ w-full px-4 py-3 text-center font-display text-4xl font-bold"
         />
       )}
-      <p className="text-center text-xs text-muted">{MEDIA_LABEL[effective].hint}</p>
+      <p className="text-center text-[14px] text-muted italic">{MEDIA_LABEL[effective].hint}</p>
       <ErrorText>{error}</ErrorText>
       <Button onClick={submit} busy={busy} disabled={!value.trim()}>
         Envoyer ma réponse
@@ -122,16 +123,20 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
   const [group, setGroup] = useState(0);
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex min-h-20 items-center justify-center gap-2 rounded-2xl bg-night/70 px-4 py-3 ring-2 ring-white/10">
-        {picked.length === 0 && <span className="text-muted">Choisis jusqu'à {MAX_EMOJIS} emojis</span>}
+      <div className="champ flex min-h-20 items-center justify-center gap-2 px-4 py-3">
+        {picked.length === 0 && <span className="text-muted italic">Choisis jusqu'à {MAX_EMOJIS} emojis</span>}
         {picked.map((e, i) => (
           <button key={i} onClick={() => onChange(picked.filter((_, j) => j !== i).join(""))} className="text-5xl">
             {e}
           </button>
         ))}
         {picked.length > 0 && (
-          <button onClick={() => onChange(picked.slice(0, -1).join(""))} className="ml-2 text-xl text-muted" aria-label="Effacer">
-            ⌫
+          <button
+            onClick={() => onChange(picked.slice(0, -1).join(""))}
+            className="ml-2 flex min-h-11 min-w-11 items-center justify-center text-muted"
+            aria-label="Effacer le dernier emoji"
+          >
+            <Icon name="annuler" size={22} />
           </button>
         )}
       </div>
@@ -140,7 +145,7 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
           <button
             key={g.name}
             onClick={() => setGroup(i)}
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${i === group ? "bg-rose text-white" : "bg-plum-light text-muted"}`}
+            className={`pilule min-h-9 shrink-0 border px-3 py-1 font-display text-[15px] font-bold ${i === group ? "border-encre bg-encre text-lettre" : "border-encre/30 bg-lettre text-encre"}`}
           >
             {g.name}
           </button>
@@ -152,7 +157,7 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
             key={e}
             disabled={picked.length >= MAX_EMOJIS}
             onClick={() => onChange(value + e)}
-            className="aspect-square rounded-xl bg-plum-light/60 text-2xl transition active:scale-90 disabled:opacity-40"
+            className="aspect-square rounded-lg text-2xl transition hover:bg-papier active:scale-90 disabled:opacity-40"
           >
             {e}
           </button>

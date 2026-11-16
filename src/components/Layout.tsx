@@ -1,27 +1,42 @@
 import { FINISH, MAX_TURNS } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { Icon } from "./Icon";
 import { Legend } from "./Legend";
-import { SpiralBoard } from "./SpiralBoard";
+import { SquareBoard } from "./SquareBoard";
 import { Card } from "./ui";
 
 /** Plateau + infos de partie + légende : colonne de gauche sur ordinateur, feuille plein écran sur téléphone. */
-export function BoardPanel({ position, pawn, turn }: { position: number; pawn: string; turn?: number }) {
+export function BoardPanel({
+  position,
+  pawn,
+  turn,
+  startName,
+  endName,
+}: {
+  position: number;
+  pawn: string;
+  turn?: number;
+  startName?: string;
+  endName?: string;
+}) {
   return (
-    <div className="flex flex-col gap-4">
-      <Card className="!p-4">
-        <div className="mb-2 flex items-center justify-between font-display font-semibold">
-          <span>{turn ? `Tour ${Math.min(turn, MAX_TURNS)}/${MAX_TURNS}` : "Le plateau"}</span>
-          <span>
-            {pawn} case {position}/{FINISH}
-          </span>
+    <div className="flex flex-col gap-5">
+      <Card className="!px-3 !pt-3 !pb-4 sm:!px-5">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 px-1">
+          <p className="titre text-2xl text-cachet">
+            {startName && endName ? `De chez ${startName} à chez ${endName}` : "Le chemin"}
+          </p>
+          <p className="font-display text-lg font-bold">
+            {turn ? `Tour ${Math.min(turn, MAX_TURNS)}/${MAX_TURNS} · ` : ""}case {position}/{FINISH}
+          </p>
         </div>
-        <div className="mx-auto" style={{ maxWidth: "min(100%, calc(100vh - 7rem))" }}>
-          <SpiralBoard position={position} pawn={pawn} />
+        <div className="mx-auto" style={{ maxWidth: "min(100%, calc(100dvh - 8.5rem))" }}>
+          <SquareBoard position={position} pawn={pawn} startName={startName} endName={endName} />
         </div>
       </Card>
-      <Card>
-        <p className="mb-3 font-display text-lg font-semibold">Légende</p>
+      <Card tilt={0.4}>
+        <p className="titre mb-3 text-[28px]">Légende</p>
         <Legend />
       </Card>
     </div>
@@ -31,9 +46,9 @@ export function BoardPanel({ position, pawn, turn }: { position: number; pawn: s
 /** Mise en page : une colonne sur téléphone, deux sur ordinateur (plateau à gauche, jeu à droite). */
 export function GameLayout({ board, children }: { board: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pt-4 pb-10 lg:grid lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-start lg:gap-8 lg:pt-8">
+    <div className="mx-auto w-full max-w-7xl px-4 pt-4 pb-10 lg:grid lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-start lg:gap-10 lg:pt-8">
       <aside className="hidden lg:block">{board}</aside>
-      <main className="mx-auto flex w-full max-w-md flex-col gap-4 lg:max-w-none">{children}</main>
+      <main className="mx-auto flex w-full max-w-md flex-col gap-5 lg:max-w-none">{children}</main>
     </div>
   );
 }
@@ -47,11 +62,17 @@ export function BoardSheet({ open, onClose, children }: { open: boolean; onClose
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 overflow-y-auto bg-night/95 px-4 pt-4 pb-10 backdrop-blur lg:hidden"
+          className="fixed inset-0 z-50 overflow-y-auto bg-papier px-4 pt-4 pb-10 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Plateau et légende"
         >
           <div className="mx-auto flex max-w-md flex-col gap-4">
-            <button onClick={onClose} className="self-end rounded-full bg-plum-light px-4 py-2 font-bold">
-              ✕ Fermer
+            <button
+              onClick={onClose}
+              className="pilule flex min-h-11 items-center gap-1.5 self-end border-[1.5px] border-encre/60 bg-lettre px-4 font-display font-bold"
+            >
+              <Icon name="fermer" size={18} /> Fermer
             </button>
             {children}
           </div>

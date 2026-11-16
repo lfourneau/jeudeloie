@@ -1,7 +1,7 @@
 import { GUESS_MAX_LENGTH, validateGuess } from "@rules";
 import { useState } from "react";
 import { AnswerView } from "../components/AnswerView";
-import { Button, Card, Dots, ErrorText, MEDIA_LABEL } from "../components/ui";
+import { Button, Card, Dots, ErrorText, Label, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
 
@@ -12,13 +12,13 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
 
   if (isAnswerer) {
     return (
-      <Card className="py-8 text-center">
-        <p className="text-sm text-muted">Ta réponse</p>
+      <Card tilt={-0.4} className="py-8 text-center">
+        <Label>Ta réponse est partie</Label>
         <div className="my-4">
           <AnswerView round={round} />
         </div>
-        <p className="font-display text-xl font-semibold">
-          {partner.name} devine… <Dots />
+        <p className="titre text-2xl">
+          {partner.name} cherche la question… <Dots />
         </p>
       </Card>
     );
@@ -39,14 +39,14 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
 
   return (
     <>
-      <Card className="py-8">
-        <p className="mb-4 text-center text-sm text-muted">
-          {partner.name} a répondu avec {MEDIA_LABEL[round.media].label} {MEDIA_LABEL[round.media].icon}
+      <Card tilt={-0.5} className="py-7">
+        <p className="titre mb-4 text-center text-2xl">
+          {partner.name} t'a envoyé {MEDIA_LABEL[round.media].label}
         </p>
         <AnswerView round={round} />
       </Card>
-      <Card className="flex flex-col gap-3">
-        <label htmlFor="guess" className="font-display text-lg font-semibold">
+      <Card tilt={0.3} className="flex flex-col gap-3">
+        <label htmlFor="guess" className="titre text-[28px]">
           Quelle était la question ?
         </label>
         <textarea
@@ -56,15 +56,15 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
           value={guess}
           maxLength={GUESS_MAX_LENGTH}
           onChange={(e) => setGuess(e.target.value)}
-          placeholder="Ex. : ta saison préférée ?"
-          className="resize-none rounded-2xl bg-night/70 px-4 py-3 text-lg outline-none ring-2 ring-white/10 focus:ring-rose"
+          placeholder="Par exemple : ta saison préférée ?"
+          className="champ resize-none px-4 py-3 text-lg"
         />
-        <p className="text-right text-xs text-muted">
+        <p className="text-right text-[13px] text-muted">
           {guess.length}/{GUESS_MAX_LENGTH}
         </p>
         <ErrorText>{error}</ErrorText>
         <Button onClick={submit} busy={busy} disabled={!guess.trim()}>
-          Proposer
+          Envoyer ma devinette
         </Button>
       </Card>
     </>

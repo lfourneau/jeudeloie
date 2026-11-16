@@ -2,7 +2,7 @@
 
 Jeu web coopératif à deux, en temps réel, pour couples à distance. La spec complète est dans [SPEC.md](SPEC.md).
 
-Fonctionnalités : salles avec code à 4 lettres, pion commun au choix, plateau en spirale avec légende, 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
+Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins à l'encre), plateau carré de 63 cases parcouru en spirale avec légende, style « carnet de correspondance », 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
 
 ## Lancer le projet
 
@@ -64,14 +64,14 @@ Ouvre deux navigateurs, ou un onglet normal + un onglet en navigation privée (d
 
 ```text
 src/screens/            un fichier par écran (Home, Lobby, Answer, Guess, Judging, Reveal, Appeal, WheelScreen, End)
-src/components/         plateau en spirale, légende, roue, étoiles, éditeurs (texte, emojis, dessin, photo, musique, GIF)
+src/components/         plateau carré, légende, icônes et pions dessinés, roue, étoiles, éditeurs (texte, emojis, dessin, photo, musique, GIF)
 src/lib/useGame.ts      lecture de l'état + abonnement Realtime + Presence
 src/lib/actions.ts      appels aux Edge Functions (seul chemin d'écriture)
 supabase/migrations/    schéma, RLS, publication Realtime, fonctions SQL transactionnelles
 supabase/functions/_shared/rules.ts   règles pures, partagées front/serveur, testées
 supabase/functions/_shared/judge.ts   juge LLM (claude-haiku-5-5), réessai, repli manuel
 supabase/functions/<action>/          une Edge Function par action
-content/                questions.json (175 questions), board.json (41 cases)
+content/                questions.json (175 questions), board.json (64 cases : 0 à 63)
 ```
 
 ## Écarts à la spec
@@ -90,5 +90,7 @@ content/                questions.json (175 questions), board.json (41 cases)
 | Cases spéciales | piège, tremplin, coffre, tempête, double tour + bonus | chance, malchance, piège, tremplin | choix V2 : uniquement des effets de déplacement. |
 | Juge | barème strict, texte seul | barème indulgent, bonus d'originalité, voit les images | demande V2. |
 | Clics simultanés | 409 | action rejouée automatiquement | deux « Continuer » au même moment ne bloquent plus le tour. |
+| Plateau | 41 cases, 15 tours, serpentin | 63 cases (grille 8 × 8 en spirale), 24 tours | demande V3 : jeu de l'oie traditionnel ; tours augmentés pour garder la même difficulté. |
+| Pion | emoji | dessin à l'encre | le style carnet exclut les emojis de l'interface. |
 
 **Limite connue** : pendant un appel, la note déjà donnée par l'un est lisible dans l'onglet Réseau de l'autre (elle n'est pas affichée à l'écran). À corriger en V2 en la stockant hors de `rounds`.

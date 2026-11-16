@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { actions } from "../lib/actions";
 import type { GifMedia, MusicMedia } from "../lib/types";
+import { Icon } from "./Icon";
 import { Button, Dots, ErrorText } from "./ui";
 
 /** Recherche avec délai : ne lance la requête qu'une fois la saisie terminée. */
@@ -41,7 +42,7 @@ function SearchBox({ value, onChange, placeholder }: { value: string; onChange: 
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-2xl bg-night/70 px-4 py-3 text-lg outline-none ring-2 ring-white/10 focus:ring-rose"
+      className="champ w-full px-4 py-3 text-lg"
     />
   );
 }
@@ -82,17 +83,21 @@ export function MusicPicker({ roomId, onDone, busy }: { roomId: string; onDone: 
         {results.map((m) => (
           <li
             key={m.id}
-            className={`flex items-center gap-3 rounded-2xl p-2 ${selected?.id === m.id ? "bg-rose/30 ring-2 ring-rose" : "bg-night/50"}`}
+            className={`flex items-center gap-3 rounded-md border p-2 ${selected?.id === m.id ? "border-cachet bg-rose/40 ring-1 ring-cachet" : "border-encre/15 bg-lettre"}`}
           >
-            <button onClick={() => toggle(m)} className="relative shrink-0" aria-label="Écouter l'extrait">
-              <img src={m.cover} alt="" className="h-12 w-12 rounded-lg" />
-              <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xl">
-                {playing === m.id ? "⏸" : "▶"}
+            <button
+              onClick={() => toggle(m)}
+              className="relative shrink-0"
+              aria-label={playing === m.id ? "Arrêter l'extrait" : "Écouter l'extrait"}
+            >
+              <img src={m.cover} alt="" className="h-12 w-12" />
+              <span className="absolute inset-0 flex items-center justify-center bg-encre/45 text-lettre">
+                <Icon name={playing === m.id ? "pause" : "lecture"} size={22} strokeWidth={2.2} />
               </span>
             </button>
             <button onClick={() => setSelected(m)} className="min-w-0 flex-1 text-left">
               <p className="truncate font-semibold">{m.title}</p>
-              <p className="truncate text-sm text-muted">{m.artist}</p>
+              <p className="truncate text-[15px] text-muted italic">{m.artist}</p>
             </button>
           </li>
         ))}
@@ -123,13 +128,13 @@ export function GifPicker({ roomId, onDone, busy }: { roomId: string; onDone: (i
           <button
             key={g.id}
             onClick={() => setSelected(g)}
-            className={`overflow-hidden rounded-xl ${selected?.id === g.id ? "ring-4 ring-rose" : ""}`}
+            className={`overflow-hidden border-4 ${selected?.id === g.id ? "border-cachet" : "border-lettre"}`}
           >
             <img src={g.url} alt={g.title} loading="lazy" className="h-28 w-full object-cover" />
           </button>
         ))}
       </div>
-      <p className="text-right text-[10px] text-muted">GIF fournis par GIPHY</p>
+      <p className="text-right text-[12px] text-muted italic">GIF fournis par GIPHY</p>
       <Button onClick={() => selected && onDone(selected.id)} disabled={!selected} busy={busy}>
         Envoyer ce GIF
       </Button>

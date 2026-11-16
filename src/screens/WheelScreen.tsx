@@ -2,7 +2,8 @@ import { FINISH, WHEEL_SEGMENTS } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CASE_STYLE } from "../components/cases";
-import { SpiralBoard } from "../components/SpiralBoard";
+import { Icon } from "../components/Icon";
+import { SquareBoard } from "../components/SquareBoard";
 import { Stars } from "../components/Stars";
 import { Button, Card } from "../components/ui";
 import { Wheel } from "../components/Wheel";
@@ -20,11 +21,15 @@ type Stage = "spin" | "move" | "effect" | "effect-move" | "done";
 export function WheelScreen({
   round,
   pawn,
+  startName,
+  endName,
   onPosition,
   onDone,
 }: {
   round: Round;
   pawn: string;
+  startName?: string;
+  endName?: string;
   onPosition: (p: number) => void;
   onDone: () => void;
 }) {
@@ -63,59 +68,65 @@ export function WheelScreen({
   }, [stage, onDone]);
 
   const effectStyle = effect ? CASE_STYLE[effect.type as keyof typeof CASE_STYLE] : null;
+  const arrived = stage === "done" && to >= FINISH;
+  const announce =
+    stage === "spin"
+      ? ""
+      : stage === "effect" && effect
+        ? `${effectStyle?.label} : ${effect.label}, ${effect.delta > 0 ? `+${effect.delta}` : effect.delta}`
+        : `+${round.wheel_result} case${(round.wheel_result ?? 0) > 1 ? "s" : ""}`;
 
   return (
     <>
-      <Card className="text-center">
-        <p className="text-sm font-bold text-muted">Note finale du tour</p>
+      <Card tilt={-0.4} className="text-center">
+        <p className="font-display text-lg text-muted">Note finale du tour</p>
         <div className="my-2">
-          <Stars score={Number(round.final_score ?? 0)} size={28} />
+          <Stars score={Number(round.final_score ?? 0)} size={30} />
         </div>
-        <p className="font-display text-xl font-semibold text-gold">{LEVEL_LABEL[level]}</p>
+        <p className="titre text-[28px]">{LEVEL_LABEL[level]}</p>
       </Card>
 
-      <div className="py-2">
+      <div className="py-4">
         <Wheel segments={WHEEL_SEGMENTS[level]} segmentIndex={round.wheel_index ?? 0} onDone={() => setStage("move")} />
       </div>
 
+      <div aria-live="polite" className="sr-only">
+        {announce}
+      </div>
       <AnimatePresence mode="wait">
         {stage !== "spin" && stage !== "effect" && (
           <motion.p
             key="steps"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ scale: 0, rotate: -8 }}
+            animate={{ scale: 1, rotate: -2 }}
             exit={{ scale: 0 }}
-            className="text-center font-display text-4xl font-bold text-gold"
+            className="text-center font-display text-5xl font-bold text-cachet"
           >
-            +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""} !
+            +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""}
           </motion.p>
         )}
         {stage === "effect" && effect && effectStyle && (
           <motion.div
             key="effect"
             initial={{ rotateY: 90, scale: 0.8 }}
-            animate={{ rotateY: 0, scale: 1 }}
+            animate={{ rotateY: 0, scale: 1, rotate: 4 }}
             exit={{ opacity: 0 }}
-            className={`mx-auto w-64 rounded-3xl p-5 text-center shadow-2xl ${effectStyle.bg}`}
+            className="timbre mx-auto w-60 p-5 text-center shadow-[0_14px_26px_-18px_rgba(31,47,74,.6)]"
           >
-            <div className="text-5xl">{effectStyle.icon}</div>
-            <p className="mt-2 text-xs font-bold tracking-widest uppercase opacity-80">{effectStyle.label}</p>
+            <Icon name={effectStyle.icon} size={52} className="mx-auto" />
+            <p className="mt-1 font-display text-lg">{effectStyle.label}</p>
             <p className="font-display text-2xl font-bold">{effect.label}</p>
-            <p className="font-display text-3xl font-bold">
-              {effect.delta > 0 ? `+${effect.delta}` : effect.delta}
-            </p>
+            <p className="font-display text-4xl font-bold">{effect.delta > 0 ? `+${effect.delta}` : effect.delta}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Sur téléphone, le plateau est ici ; sur ordinateur, le grand plateau à gauche suit le pion. */}
       <Card className="lg:hidden">
-        <SpiralBoard position={pos} pawn={pawn} />
-        {stage === "done" && to >= FINISH && <p className="mt-3 text-center font-display text-xl">Arrivée atteinte ! 🎉</p>}
+        <SquareBoard position={pos} pawn={pawn} startName={startName} endName={endName} />
+        {arrived && <p className="titre mt-3 text-center text-2xl text-cachet">Vous voilà réunis !</p>}
       </Card>
-      {stage === "done" && to >= FINISH && (
-        <p className="hidden text-center font-display text-2xl lg:block">Arrivée atteinte ! 🎉</p>
-      )}
+      {arrived && <p className="titre hidden text-center text-3xl text-cachet lg:block">Vous voilà réunis !</p>}
       <Button variant="ghost" onClick={onDone}>
         Passer l'animation
       </Button>

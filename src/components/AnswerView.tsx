@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { GifMedia, MusicMedia, Round } from "../lib/types";
+import { Icon } from "./Icon";
 import { Dots } from "./ui";
 
 /** URL signée (1 h) d'un dessin ou d'une photo : la RLS du bucket limite la lecture aux joueurs de la salle. */
@@ -33,7 +34,7 @@ export function AnswerView({ round, size = "lg" }: { round: Round; size?: "lg" |
           <img
             src={image}
             alt={round.media === "dessin" ? "Dessin" : "Photo"}
-            className={`rounded-2xl bg-white object-contain ${small ? "max-h-32" : "max-h-[22rem] w-full"}`}
+            className={`border-[6px] border-lettre bg-lettre object-contain shadow-[0_10px_20px_-14px_rgba(31,47,74,.6)] ${small ? "max-h-32 rotate-[-1.5deg]" : "max-h-[22rem] w-full rotate-[-0.8deg]"}`}
           />
         ) : (
           <div className={`flex items-center justify-center text-muted ${small ? "h-20" : "h-60"}`}>
@@ -52,7 +53,7 @@ export function AnswerView({ round, size = "lg" }: { round: Round; size?: "lg" |
         animate={{ scale: 1, opacity: 1 }}
         src={g.url}
         alt={g.title}
-        className={`mx-auto rounded-2xl ${small ? "max-h-28" : "max-h-72 w-full object-contain"}`}
+        className={`mx-auto border-[6px] border-lettre shadow-[0_10px_20px_-14px_rgba(31,47,74,.6)] ${small ? "max-h-28" : "max-h-72 w-full object-contain"}`}
       />
     );
   }
@@ -62,10 +63,12 @@ export function AnswerView({ round, size = "lg" }: { round: Round; size?: "lg" |
     return (
       <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col items-center gap-3">
         <div className="flex w-full items-center gap-3">
-          <img src={m.cover} alt="" className={`rounded-xl shadow-lg ${small ? "h-12 w-12" : "h-24 w-24"}`} />
+          <img src={m.cover} alt="" className={`rotate-[-2deg] border-4 border-lettre shadow-[0_10px_20px_-14px_rgba(31,47,74,.6)] ${small ? "h-12 w-12" : "h-24 w-24"}`} />
           <div className="min-w-0 text-left">
-            <p className={`truncate font-display font-bold ${small ? "" : "text-xl"}`}>🎵 {m.title}</p>
-            <p className="truncate text-muted">{m.artist}</p>
+            <p className={`flex items-center gap-1.5 font-display font-bold break-words ${small ? "" : "text-xl"}`}>
+              <Icon name="musique" size={small ? 16 : 20} /> <span className="min-w-0 truncate">{m.title}</span>
+            </p>
+            <p className="truncate text-muted italic">{m.artist}</p>
           </div>
         </div>
         {!small && m.preview && <audio controls src={m.preview} className="w-full" />}
@@ -79,7 +82,7 @@ export function AnswerView({ round, size = "lg" }: { round: Round; size?: "lg" |
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 14 }}
       className={`break-words text-center font-display font-bold ${
-        small ? "text-2xl" : round.media === "emojis" ? "text-7xl" : "text-5xl"
+        small ? "text-2xl" : round.media === "emojis" ? "text-7xl" : "-rotate-2 text-5xl"
       }`}
     >
       {round.answer_text}

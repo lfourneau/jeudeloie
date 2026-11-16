@@ -38,8 +38,8 @@ export type Outcome = "win" | "lose" | null;
 
 // ---------- Constantes ----------
 
-export const FINISH = 40;
-export const MAX_TURNS = 15;
+export const FINISH = 63;
+export const MAX_TURNS = 24;
 export const GUESS_MAX_LENGTH = 250;
 export const WORD_MAX_LENGTH = 30;
 export const MAX_EMOJIS = 3;
@@ -58,8 +58,21 @@ export const WHEEL_SEGMENTS: readonly (readonly number[])[] = [
   [3, 4, 4, 5, 5, 6],
 ];
 
-/** Pions proposés en salle d'attente (un pion commun aux deux joueurs). */
-export const PAWNS: readonly string[] = ["🧸", "🐢", "🦊", "🐼", "🦄", "🐙", "🚀", "🐸", "🐧", "🦋", "🍄", "🎈"];
+/** Pions proposés en salle d'attente (un pion commun aux deux joueurs), dessinés à l'encre côté front. */
+export const PAWNS: readonly string[] = [
+  "oie",
+  "tortue",
+  "renard",
+  "chat",
+  "escargot",
+  "enveloppe",
+  "avion",
+  "montgolfiere",
+  "bateau",
+  "velo",
+  "coeur",
+  "etoile",
+];
 export const DEFAULT_PAWN = PAWNS[0];
 
 export function isValidPawn(p: unknown): p is string {

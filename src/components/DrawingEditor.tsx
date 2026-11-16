@@ -1,9 +1,14 @@
 import { DRAWING_SECONDS } from "@rules";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Icon } from "./Icon";
 import { Button } from "./ui";
 
+const TOOL = "pilule flex min-h-11 items-center gap-1 border-[1.5px] px-3 font-display text-[15px] font-bold disabled:opacity-40";
+
 const SIZE = 600; // résolution interne du dessin (carré)
-const COLORS = ["#1e1033", "#ff5c8a", "#ffc94d", "#5fe3b5", "#6ec3ff", "#b79bff", "#ffa36c", "#8b5a2b"];
+// Encre, cachet et lavis du carnet (teintes foncées des lavis pour rester visibles sur le papier).
+const COLORS = ["#1F2F4A", "#2B4366", "#B5442E", "#D4A443", "#D99686", "#8AA583", "#7E99BC", "#E6BE6A"];
+const PAPER = "#FBF6EC";
 const WIDTHS = [4, 10, 22];
 
 interface Stroke {
@@ -27,7 +32,7 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
   const redraw = useCallback(() => {
     const ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = PAPER;
     ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -67,7 +72,7 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
   const down = (e: React.PointerEvent) => {
     if (sent.current) return;
     canvas.current!.setPointerCapture(e.pointerId);
-    current.current = { color: eraser ? "#ffffff" : color, width: eraser ? 36 : width, points: [toPoint(e)] };
+    current.current = { color: eraser ? PAPER : color, width: eraser ? 36 : width, points: [toPoint(e)] };
     redraw();
   };
   const move = (e: React.PointerEvent) => {
@@ -96,8 +101,10 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted">Dessine ta réponse</span>
-        <span className={`font-display text-lg font-bold ${left <= 10 ? "text-rose" : ""}`}>⏱ {left}s</span>
+        <span className="font-display text-lg text-muted">Dessine ta réponse</span>
+        <span className={`flex items-center gap-1 font-display text-xl font-bold ${left <= 10 ? "text-cachet" : ""}`}>
+          <Icon name="horloge" size={20} /> {left} s
+        </span>
       </div>
       <canvas
         ref={canvas}
@@ -107,7 +114,7 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
-        className="aspect-square w-full touch-none rounded-2xl bg-white shadow-inner"
+        className="aspect-square w-full touch-none rounded-sm border-[1.5px] border-encre/40 bg-lettre shadow-[inset_0_0_18px_rgba(31,47,74,.08)]"
       />
       <div className="flex flex-wrap items-center gap-2">
         {COLORS.map((c) => (
@@ -118,7 +125,8 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
               setColor(c);
               setEraser(false);
             }}
-            className={`h-8 w-8 rounded-full ring-2 ${!eraser && color === c ? "ring-white" : "ring-transparent"}`}
+            aria-pressed={!eraser && color === c}
+            className={`forme-${(COLORS.indexOf(c) % 4) + 1} h-11 w-11 border-[1.5px] border-encre/50 ${!eraser && color === c ? "ring-2 ring-cachet ring-offset-2 ring-offset-lettre" : ""}`}
             style={{ background: c }}
           />
         ))}
@@ -131,20 +139,25 @@ export function DrawingEditor({ onDone, busy }: { onDone: (png: Blob) => void; b
               setWidth(w);
               setEraser(false);
             }}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl ${!eraser && width === w ? "bg-rose" : "bg-plum-light"}`}
+            aria-pressed={!eraser && width === w}
+            className={`flex h-11 w-11 items-center justify-center rounded-full border-[1.5px] ${!eraser && width === w ? "border-cachet bg-rose/50" : "border-encre/30 bg-lettre"}`}
             aria-label={`Épaisseur ${w}`}
           >
-            <span className="rounded-full bg-white" style={{ width: w / 2 + 3, height: w / 2 + 3 }} />
+            <span className="rounded-full bg-encre" style={{ width: w / 2 + 3, height: w / 2 + 3 }} />
           </button>
         ))}
-        <button onClick={() => setEraser(true)} className={`rounded-xl px-3 py-2 text-sm ${eraser ? "bg-rose" : "bg-plum-light"}`}>
-          🧽 Gomme
+        <button
+          onClick={() => setEraser(true)}
+          aria-pressed={eraser}
+          className={`${TOOL} ${eraser ? "border-cachet bg-rose/50" : "border-encre/30 bg-lettre"}`}
+        >
+          <Icon name="gomme" size={18} /> Gomme
         </button>
-        <button onClick={undo} disabled={count === 0} className="rounded-xl bg-plum-light px-3 py-2 text-sm disabled:opacity-40">
-          ↶ Annuler
+        <button onClick={undo} disabled={count === 0} className={`${TOOL} border-encre/30 bg-lettre`}>
+          <Icon name="annuler" size={18} /> Annuler
         </button>
-        <button onClick={clear} disabled={count === 0} className="rounded-xl bg-plum-light px-3 py-2 text-sm disabled:opacity-40">
-          Effacer
+        <button onClick={clear} disabled={count === 0} className={`${TOOL} border-encre/30 bg-lettre`}>
+          Tout effacer
         </button>
       </div>
       <Button onClick={finish} busy={busy} disabled={count === 0}>

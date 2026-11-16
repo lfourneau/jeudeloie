@@ -1,17 +1,32 @@
-import { animate, motion, useMotionValue } from "framer-motion";
+import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
 
-const COLORS = ["#ff5c8a", "#6ec3ff", "#ffc94d", "#b79bff", "#5fe3b5", "#ff9ab5"];
+const LAVIS = ["#9DB4D0", "#E6BE6A", "#E8B4A8", "#A9C0A2"];
 
 /**
- * Roue décorative : le résultat (segmentIndex) est déjà tiré par le serveur,
+ * Regroupe les parts identiques en un seul secteur (les parts sont triées) :
+ * `[1,1,2,2,3]` → 1 sur 2/5 de la roue, 2 sur 2/5, 3 sur 1/5. Les probabilités ne changent pas.
+ */
+function sectors(segments: readonly number[]) {
+  const n = segments.length;
+  const out: { value: number; from: number; to: number }[] = [];
+  segments.forEach((v, i) => {
+    const last = out[out.length - 1];
+    if (last && last.value === v) last.to = ((i + 1) / n) * 360;
+    else out.push({ value: v, from: (i / n) * 360, to: ((i + 1) / n) * 360 });
+  });
+  return out;
+}
+
+/**
+ * Roue aquarelle : le résultat (segmentIndex) est déjà tiré par le serveur,
  * on anime seulement jusqu'à lui.
  */
 export function Wheel({
   segments,
   segmentIndex,
   onDone,
-  duration = 3.5,
+  duration = 2.6,
 }: {
   segments: readonly number[];
   segmentIndex: number;
@@ -19,55 +34,90 @@ export function Wheel({
   duration?: number;
 }) {
   const n = segments.length;
-  const angle = 360 / n;
+  const slice = 360 / n;
   const rotation = useMotionValue(0);
+  const reduce = useReducedMotion();
   const size = 260;
-  const r = size / 2;
+  const secs = sectors(segments);
 
   useEffect(() => {
-    // Le pointeur est en haut : on amène le centre du segment gagnant à 0°.
-    const target = 360 * 5 + (360 - (segmentIndex + 0.5) * angle);
-    const controls = animate(rotation, target, { duration, ease: [0.15, 0.85, 0.25, 1], onComplete: onDone });
+    // La flèche est en haut : on amène le milieu de la part tirée sous la flèche.
+    const target = 360 * 4 + (360 - (segmentIndex + 0.5) * slice);
+    if (reduce) {
+      rotation.set(target);
+      const t = window.setTimeout(() => onDone?.(), 300);
+      return () => window.clearTimeout(t);
+    }
+    const controls = animate(rotation, target, { duration, ease: [0.15, 0.8, 0.2, 1], onComplete: onDone });
     return () => controls.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segmentIndex, n]);
 
-  const arc = (i: number) => {
-    const a0 = ((i * angle - 90) * Math.PI) / 180;
-    const a1 = (((i + 1) * angle - 90) * Math.PI) / 180;
-    const x0 = r + r * Math.cos(a0);
-    const y0 = r + r * Math.sin(a0);
-    const x1 = r + r * Math.cos(a1);
-    const y1 = r + r * Math.sin(a1);
-    return `M${r},${r} L${x0},${y0} A${r},${r} 0 0 1 ${x1},${y1} Z`;
-  };
+  const gradient = `conic-gradient(${secs
+    .map((s, i) => `${LAVIS[i % LAVIS.length]} ${s.from}deg ${s.to}deg`)
+    .join(", ")})`;
 
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
-      <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 text-3xl drop-shadow">🔻</div>
-      <motion.svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ rotate: rotation }}>
-        {segments.map((v, i) => {
-          const mid = (((i + 0.5) * angle - 90) * Math.PI) / 180;
+      {/* Flèche à l'encre */}
+      <svg viewBox="0 0 30 34" width={30} height={34} className="absolute -top-5 left-1/2 z-10 -translate-x-1/2" aria-hidden>
+        <path d="M3 3c8 .6 16 .4 24-.2L15.4 31Z" fill="#1F2F4A" stroke="#1F2F4A" strokeWidth={2} strokeLinejoin="round" />
+      </svg>
+      <motion.div
+        className="relative h-full w-full rounded-full"
+        style={{
+          rotate: rotation,
+          backgroundImage: gradient,
+          border: "2px solid #1F2F4A",
+          outline: "2px dashed #B5442E",
+          outlineOffset: 9,
+        }}
+      >
+        {/* traits d'encre entre les secteurs */}
+        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden>
+          {secs.map((s) => {
+            const a = ((s.from - 90) * Math.PI) / 180;
+            return (
+              <line
+                key={s.from}
+                x1={50}
+                y1={50}
+                x2={50 + 50 * Math.cos(a)}
+                y2={50 + 50 * Math.sin(a)}
+                stroke="#1F2F4A"
+                strokeOpacity={0.6}
+                strokeWidth={0.7}
+              />
+            );
+          })}
+        </svg>
+        {secs.map((s) => {
+          const mid = (((s.from + s.to) / 2 - 90) * Math.PI) / 180;
           return (
-            <g key={i}>
-              <path d={arc(i)} fill={COLORS[i % COLORS.length]} stroke="#1e1033" strokeWidth={3} />
-              <text
-                x={r + r * 0.65 * Math.cos(mid)}
-                y={r + r * 0.65 * Math.sin(mid)}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={30}
-                fontWeight={700}
-                fill="#1e1033"
-                fontFamily="Fredoka, sans-serif"
-              >
-                +{v}
-              </text>
-            </g>
+            <span
+              key={s.from}
+              className="absolute font-display text-[26px] leading-none font-bold text-encre"
+              style={{
+                left: `${50 + 33 * Math.cos(mid)}%`,
+                top: `${50 + 33 * Math.sin(mid)}%`,
+                transform: `translate(-50%, -50%) rotate(${(s.from + s.to) / 2}deg)`,
+              }}
+            >
+              +{s.value}
+            </span>
           );
         })}
-        <circle cx={r} cy={r} r={22} fill="#1e1033" />
-      </motion.svg>
+      </motion.div>
+      {/* reflet clair et bord légèrement assombri, fixes */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 40% 35%, rgba(255,255,255,.4), transparent 55%), radial-gradient(circle, transparent 62%, rgba(31,47,74,.16) 100%)",
+        }}
+      />
+      {/* moyeu */}
+      <div className="cachet absolute top-1/2 left-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2" />
     </div>
   );
 }

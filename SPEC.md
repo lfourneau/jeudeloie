@@ -329,3 +329,19 @@ Ces choix remplacent les passages correspondants plus haut.
 **Note finale** = note du juge (ou de l'appel) + 1 si coup de cœur + 1 si originalité, plafonnée à 5.
 
 **Nouvelles fonctions** : `upload-url` (URL d'upload signée, chemin imposé `room_id/round_id.png|jpg`), `search-media` (proxy Deezer / GIPHY, la clé GIPHY reste côté serveur), `set-pawn` (salle d'attente). Le bucket privé `answers` n'est lisible que par les deux joueurs de la salle.
+
+## Évolutions V3 (implémentées sur la branche feat/carnet)
+
+Ces choix remplacent les passages correspondants plus haut.
+
+**Plateau** : 63 cases comme un jeu de l'oie (0 = départ, 63 = arrivée), soit 64 emplacements sur un plateau carré 8 × 8, parcouru en spirale dans le sens horaire du coin en haut à gauche vers le centre. 45 cases réponse et 18 timbres (chance ×5, malchance ×5, piège ×4, tremplin ×4), jamais deux timbres d'affilée. Le départ est « chez » le joueur 1 et l'arrivée « chez » le joueur 2.
+
+**Durée** : 24 tours au lieu de 15, pour garder la même difficulté sur un chemin plus long.
+
+**Style** : direction artistique « carnet de correspondance » (skill `.claude/skills/style-carnet-correspondance`) : papier aquarelle, encre bleu nuit, Kalam et Spectral, cases réponse en lavis, cases spéciales en timbres, départ et arrivée en cachets de la poste, aucun emoji dans l'interface (les emojis restent comme média de réponse).
+
+**Pion** : les 12 pions sont des dessins à l'encre (ids `oie`, `tortue`, `renard`, `chat`, `escargot`, `enveloppe`, `avion`, `montgolfiere`, `bateau`, `velo`, `coeur`, `etoile`).
+
+**Juge** : représenté par un petit mouton à toque. Son commentaire (inchangé côté serveur) s'affiche en entier dans une bulle de hauteur libre.
+
+**Roue** : mêmes probabilités ; les parts de même valeur sont dessinées comme un seul secteur, donc les secteurs ont des tailles inégales.

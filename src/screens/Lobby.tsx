@@ -1,9 +1,11 @@
-import { PAWNS } from "@rules";
+import { FINISH, MAX_TURNS, PAWNS } from "@rules";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { BoardPanel, GameLayout } from "../components/Layout";
 import { Legend } from "../components/Legend";
-import { SpiralBoard } from "../components/SpiralBoard";
+import { Icon } from "../components/Icon";
+import { Pawn, pawnLabel } from "../components/Pawn";
+import { SquareBoard } from "../components/SquareBoard";
 import { Button, Card, ErrorText } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { GameData } from "../lib/useGame";
@@ -42,51 +44,67 @@ export function Lobby({ data, onlineSeats, onLeave }: { data: GameData; onlineSe
     setBusy(false);
   };
 
+  const name = (seat: number) => data.players.find((p) => p.seat === seat)?.name;
+  const rule = `Atteignez la case ${FINISH} en ${MAX_TURNS} tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question.`;
+
   return (
-    <GameLayout board={<BoardPanel position={0} pawn={pawn} />}>
-      <Card className="text-center">
-        <p className="text-sm font-bold text-muted">Code de la partie</p>
-        <p className="my-2 font-display text-6xl font-bold tracking-[0.25em]">{data.room.code}</p>
+    <GameLayout board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}>
+      <Card tilt={-0.5} className="relative text-center">
+        <div className="cachet absolute -top-3 -right-2 flex h-16 w-16 rotate-[-10deg] items-center justify-center font-display text-[13px] leading-tight font-bold">
+          Poste
+          <br />
+          {data.room.code}
+        </div>
+        <p className="font-display text-lg text-muted">Code du carnet</p>
+        <p className="my-1 font-display text-6xl font-bold tracking-[0.2em] text-cachet">{data.room.code}</p>
         <Button variant="secondary" onClick={copy}>
-          {copied ? "Lien copié ✓" : "Copier le lien"}
+          <Icon name="enveloppe" size={20} /> {copied ? "Lien copié" : "Envoyer le lien"}
         </Button>
       </Card>
 
-      <Card>
+      <Card tilt={0.4}>
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-display text-lg font-semibold">Joueurs</span>
-          <span className={`rounded-full px-3 py-1 text-sm font-bold ${full ? "bg-mint text-night" : "bg-plum-light"}`}>
-            {data.players.length}/2
-          </span>
+          <span className="titre text-[28px]">Les correspondants</span>
+          <span className="font-display text-lg font-bold text-cachet">{data.players.length}/2</span>
         </div>
         <ul className="flex flex-col gap-2">
           {[0, 1].map((seat) => {
             const p = data.players.find((x) => x.seat === seat);
             return (
-              <li key={seat} className="flex items-center gap-3 rounded-2xl bg-night/50 px-4 py-3">
-                <span className={`h-2.5 w-2.5 rounded-full ${p && onlineSeats.includes(seat) ? "bg-mint" : "bg-white/20"}`} />
-                <span className={p ? "font-bold" : "text-muted"}>{p ? p.name : "En attente de ton partenaire…"}</span>
+              <li key={seat} className="flex items-center gap-3 border-b border-dashed border-encre/25 py-2 last:border-0">
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${p && onlineSeats.includes(seat) ? "bg-sauge ring-1 ring-encre/50" : "bg-encre/20"}`}
+                />
+                <span className={p ? "font-display text-xl font-bold" : "text-muted italic"}>
+                  {p ? p.name : "En attente de ton partenaire…"}
+                </span>
+                {p && <span className="ml-auto text-[13px] text-muted italic">{seat === 0 ? "point de départ" : "point d'arrivée"}</span>}
               </li>
             );
           })}
         </ul>
       </Card>
 
-      <Card>
-        <p className="mb-1 font-display text-lg font-semibold">Votre pion</p>
-        <p className="mb-3 text-sm text-muted">Un seul pion pour vous deux : l'un ou l'autre peut le choisir.</p>
-        <div className="grid grid-cols-6 gap-2">
-          {PAWNS.map((p) => (
+      <Card tilt={-0.3}>
+        <p className="titre mb-1 text-[28px]">Votre pion</p>
+        <p className="mb-3 text-muted italic">
+          Un seul pion pour vous deux, choisi par l'un ou l'autre. Pour l'instant : {pawnLabel(pawn).toLowerCase()}.
+        </p>
+        <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {PAWNS.map((p, i) => (
             <motion.button
               key={p}
-              whileTap={{ scale: 0.85 }}
+              whileTap={{ scale: 0.88 }}
               onClick={() => p !== pawn && run(() => actions.setPawn(data.room.id, p))}
               aria-pressed={p === pawn}
-              className={`flex aspect-square items-center justify-center rounded-2xl text-3xl transition ${
-                p === pawn ? "scale-110 bg-gold shadow-lg shadow-gold/30" : "bg-plum-light hover:bg-plum-light/70"
+              aria-label={pawnLabel(p)}
+              title={pawnLabel(p)}
+              className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-full p-1 transition ${
+                p === pawn ? "bg-ocre/60 ring-2 ring-cachet" : "hover:bg-papier"
               }`}
+              style={{ rotate: ((i * 37) % 7) - 3 }}
             >
-              {p}
+              <Pawn id={p} size={46} />
             </motion.button>
           ))}
         </div>
@@ -94,23 +112,19 @@ export function Lobby({ data, onlineSeats, onLeave }: { data: GameData; onlineSe
 
       <ErrorText>{error}</ErrorText>
       <Button onClick={start} disabled={!full} busy={busy}>
-        {full ? "Commencer" : "En attente du 2e joueur"}
+        {full ? "Commencer le voyage" : "En attente du 2e joueur"}
       </Button>
 
       {/* Sur téléphone : règles, plateau et légende sous les commandes */}
       <Card className="lg:hidden">
-        <p className="mb-3 text-sm text-muted">
-          Atteignez la case 40 en 15 tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question.
-        </p>
-        <SpiralBoard position={0} pawn={pawn} />
+        <p className="mb-3 text-muted italic">{rule}</p>
+        <SquareBoard position={0} pawn={pawn} startName={name(0)} endName={name(1)} />
       </Card>
       <Card className="lg:hidden">
-        <p className="mb-3 font-display text-lg font-semibold">Légende</p>
+        <p className="titre mb-3 text-[28px]">Légende</p>
         <Legend />
       </Card>
-      <p className="hidden text-center text-sm text-muted lg:block">
-        Atteignez la case 40 en 15 tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question.
-      </p>
+      <p className="hidden text-center text-muted italic lg:block">{rule}</p>
       <Button variant="ghost" onClick={onLeave}>
         Quitter la salle
       </Button>

@@ -3,6 +3,7 @@ Lis SPEC.md avant toute modification. N'implémente que l'étape demandée. Ne c
 ## Repères techniques
 
 - MVP (étapes 0 à 6) puis V2 faites : 7 médias, cases chance/malchance/piège/tremplin, plateau en spirale, pion commun, juge avec bonus d'originalité. Voir « Évolutions V2 » à la fin de SPEC.md. Les bonus partagés et l'ajustement de difficulté sont abandonnés.
+- V3 faite : style « carnet de correspondance » (skill `style-carnet-correspondance`, à suivre pour toute interface), plateau carré de 63 cases en spirale, 24 tours, pions dessinés (`Pawn.tsx`), icônes au trait (`Icon.tsx`), juge mouton. Voir « Évolutions V3 » dans SPEC.md.
 - `content/*.json` est la source ; `npm run sync-content` les copie dans `supabase/functions/_shared/content/` (les Edge Functions sont déployées sans le reste du dépôt). Toujours lancer après une modification du contenu.
 - Le front importe les règles via l'alias `@rules` et le plateau via `@board`. Il ne doit jamais importer `questions.json`.
 - Toute écriture passe par la fonction SQL `apply_game_update` (une transaction, verrou optimiste sur `game_state.version` → 409 si l'état a changé).

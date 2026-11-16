@@ -63,8 +63,8 @@ export function App() {
     return (
       <Screen>
         <Card>
-          <p className="font-bold">Configuration manquante</p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="titre text-[28px]">Configuration manquante</p>
+          <p className="mt-2 text-muted">
             Renseigne VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.local (voir README).
           </p>
         </Card>
@@ -86,7 +86,7 @@ export function App() {
 
 function Loading() {
   return (
-    <div className="flex min-h-dvh items-center justify-center text-muted">
+    <div className="flex min-h-dvh items-center justify-center text-encre">
       <Dots />
     </div>
   );
@@ -131,6 +131,7 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   if (!pendingWheel && data.game.phase === "finished") return <End data={data} onLeave={onLeave} />;
 
   const pawn = data.game.pawn;
+  const seatName = (seat: number) => data.players.find((p) => p.seat === seat)?.name;
   const round = data.rounds.find((r) => r.id === data.game.current_round_id);
   const turn = pendingWheel ? pendingWheel.turn_number : data.game.turns_counted + 1;
   const position = pendingWheel ? (animPos ?? pendingWheel.case_index) : data.game.position;
@@ -139,7 +140,16 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   let key: string;
   if (pendingWheel) {
     key = `wheel-${pendingWheel.id}`;
-    content = <WheelScreen round={pendingWheel} pawn={pawn} onPosition={setAnimPos} onDone={markAnimated} />;
+    content = (
+      <WheelScreen
+        round={pendingWheel}
+        pawn={pawn}
+        startName={seatName(0)}
+        endName={seatName(1)}
+        onPosition={setAnimPos}
+        onDone={markAnimated}
+      />
+    );
   } else if (!round) {
     key = "wait";
     content = <Loading />;
@@ -171,7 +181,9 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
     }
   }
 
-  const boardPanel = <BoardPanel position={position} pawn={pawn} turn={turn} />;
+  const boardPanel = (
+    <BoardPanel position={position} pawn={pawn} turn={turn} startName={seatName(0)} endName={seatName(1)} />
+  );
 
   return (
     <GameLayout board={boardPanel}>
@@ -185,8 +197,10 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
           onOpenBoard={() => setSheetOpen(true)}
         />
       </div>
-      <div className="hidden items-center justify-end gap-2 text-sm text-muted lg:flex">
-        <span className={`h-2 w-2 rounded-full ${onlineSeats.includes(partner.seat) ? "bg-mint" : "bg-white/20"}`} />
+      <div className="hidden items-center justify-end gap-2 text-[15px] text-muted italic lg:flex">
+        <span
+          className={`h-2 w-2 rounded-full ${onlineSeats.includes(partner.seat) ? "bg-sauge ring-1 ring-encre/50" : "bg-encre/20"}`}
+        />
         {partner.name} {onlineSeats.includes(partner.seat) ? "est connecté·e" : "est hors ligne"}
       </div>
       <AnimatePresence mode="wait">

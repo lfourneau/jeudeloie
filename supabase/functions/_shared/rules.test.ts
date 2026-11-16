@@ -34,8 +34,18 @@ const Q = questions as Question[];
 const fixed = (v: number) => () => v;
 
 describe("contenu", () => {
-  it("le plateau est valide", () => {
+  it("le plateau est valide : 64 cases, départ en 0, arrivée en 63", () => {
     expect(validateBoard(B)).toEqual([]);
+    expect(FINISH).toBe(63);
+    expect(B.cases).toHaveLength(64);
+    expect(B.cases[0].type).toBe("depart");
+    expect(B.cases[63].type).toBe("arrivee");
+  });
+  it("jamais deux cases spéciales d'affilée", () => {
+    const special = ["chance", "malchance", "piege", "tremplin"];
+    for (let i = 1; i < FINISH - 1; i++) {
+      expect(special.includes(B.cases[i].type) && special.includes(B.cases[i + 1].type)).toBe(false);
+    }
   });
   it("25 questions par média, ids uniques", () => {
     for (const m of ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"]) {
@@ -66,16 +76,16 @@ describe("mediaForCase", () => {
     expect(mediaForCase(B, 3)).toBe("nombre");
   });
   it("nouveaux médias", () => {
-    expect(mediaForCase(B, 5)).toBe("dessin");
+    expect(mediaForCase(B, 4)).toBe("dessin");
     expect(mediaForCase(B, 6)).toBe("gif");
-    expect(mediaForCase(B, 8)).toBe("musique");
-    expect(mediaForCase(B, 9)).toBe("photo");
+    expect(mediaForCase(B, 7)).toBe("musique");
+    expect(mediaForCase(B, 8)).toBe("photo");
   });
   it("case spéciale → média de la case média précédente", () => {
-    expect(B.cases[4].type).toBe("tremplin");
-    expect(mediaForCase(B, 4)).toBe("nombre");
-    expect(B.cases[7].type).toBe("chance");
-    expect(mediaForCase(B, 7)).toBe("gif");
+    expect(B.cases[5].type).toBe("tremplin");
+    expect(mediaForCase(B, 5)).toBe("dessin");
+    expect(B.cases[9].type).toBe("chance");
+    expect(mediaForCase(B, 9)).toBe("photo");
   });
 });
 
@@ -220,19 +230,19 @@ describe("cases spéciales", () => {
   it("case média : aucun effet", () => {
     expect(applyCaseEffect(B, 1)).toEqual({ effect: null, to: 1 });
   });
-  it("bornes : jamais sous 0 ni au-delà de 40", () => {
+  it("bornes : jamais sous 0 ni au-delà de l'arrivée", () => {
     const tiny: Board = { cases: B.cases.map((c) => ({ ...c })) };
     tiny.cases[1].type = "piege";
-    tiny.cases[39].type = "chance";
+    tiny.cases[FINISH - 1].type = "chance";
     expect(applyCaseEffect(tiny, 1).to).toBe(0);
-    expect(applyCaseEffect(tiny, 39, fixed(0.99)).to).toBe(FINISH);
+    expect(applyCaseEffect(tiny, FINISH - 1, fixed(0.99)).to).toBe(FINISH);
   });
 });
 
 describe("resolveTurn", () => {
   it("avance du résultat de la roue", () => {
     const r = resolveTurn(B, { position: 10, turnsCounted: 3, finalScore: 5 }, fixed(0));
-    expect(B.cases[13].type).toBe("nombre");
+    expect(B.cases[13].type).toBe("musique");
     expect(r).toMatchObject({ level: 3, steps: 3, from: 10, landed: 13, effect: null, to: 13, turnsCounted: 4, outcome: null });
   });
   it("applique l'effet de la case d'arrivée", () => {
@@ -243,25 +253,26 @@ describe("resolveTurn", () => {
   });
   it("une carte chance peut faire gagner", () => {
     const board: Board = { cases: B.cases.map((c) => ({ ...c })) };
-    board.cases[38].type = "chance";
-    const r = resolveTurn(board, { position: 37, turnsCounted: 5, finalScore: 0 }, fixed(0.99)); // part 4 = 3 → 40 directement
+    board.cases[FINISH - 2].type = "chance";
+    const r = resolveTurn(board, { position: FINISH - 3, turnsCounted: 5, finalScore: 0 }, fixed(0.99)); // part 4 = 3 → arrivée directement
     expect(r.outcome).toBe("win");
-    const r2 = resolveTurn(board, { position: 37, turnsCounted: 5, finalScore: 0 }, fixed(0)); // +1 → 38 chance, carte +1 → 39
-    expect(r2).toMatchObject({ landed: 38, to: 39, outcome: null });
+    const r2 = resolveTurn(board, { position: FINISH - 3, turnsCounted: 5, finalScore: 0 }, fixed(0)); // +1 → chance, carte +1
+    expect(r2).toMatchObject({ landed: FINISH - 2, to: FINISH - 1, outcome: null });
   });
-  it("victoire en atteignant la case 40, sans la dépasser", () => {
-    const r = resolveTurn(B, { position: 38, turnsCounted: 14, finalScore: 5 }, fixed(0.999));
+  it("victoire en atteignant la case 63, sans la dépasser", () => {
+    const r = resolveTurn(B, { position: FINISH - 2, turnsCounted: 14, finalScore: 5 }, fixed(0.999));
     expect(r).toMatchObject({ to: FINISH, outcome: "win" });
   });
-  it("défaite à la fin du 15e tour", () => {
+  it("défaite à la fin du 24e tour", () => {
     const r = resolveTurn(B, { position: 20, turnsCounted: MAX_TURNS - 1, finalScore: 0 }, fixed(0));
     expect(r).toMatchObject({ turnsCounted: MAX_TURNS, outcome: "lose" });
   });
-  it("la victoire l'emporte au 15e tour", () => {
-    const r = resolveTurn(B, { position: 39, turnsCounted: MAX_TURNS - 1, finalScore: 0 }, fixed(0));
+  it("24 tours", () => expect(MAX_TURNS).toBe(24));
+  it("la victoire l'emporte au dernier tour", () => {
+    const r = resolveTurn(B, { position: FINISH - 1, turnsCounted: MAX_TURNS - 1, finalScore: 0 }, fixed(0));
     expect(r.outcome).toBe("win");
   });
-  it("une partie parfaite gagne en 15 tours au plus, une partie nulle perd", () => {
+  it("une partie nulle perd au bout de 24 tours", () => {
     let pos = 0;
     let turns = 0;
     let outcome = null;
@@ -296,8 +307,9 @@ describe("bilan", () => {
 
 describe("pions", () => {
   it("liste fermée", () => {
-    expect(isValidPawn("🦊")).toBe(true);
-    expect(isValidPawn("💩")).toBe(false);
+    expect(isValidPawn("oie")).toBe(true);
+    expect(isValidPawn("renard")).toBe(true);
+    expect(isValidPawn("🦊")).toBe(false);
     expect(isValidPawn(3)).toBe(false);
   });
 });

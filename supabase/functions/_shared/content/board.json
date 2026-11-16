@@ -1,168 +1,68 @@
 {
   "cases": [
-    {
-      "index": 0,
-      "type": "depart"
-    },
-    {
-      "index": 1,
-      "type": "mot"
-    },
-    {
-      "index": 2,
-      "type": "emojis"
-    },
-    {
-      "index": 3,
-      "type": "nombre"
-    },
-    {
-      "index": 4,
-      "type": "tremplin"
-    },
-    {
-      "index": 5,
-      "type": "dessin"
-    },
-    {
-      "index": 6,
-      "type": "gif"
-    },
-    {
-      "index": 7,
-      "type": "chance"
-    },
-    {
-      "index": 8,
-      "type": "musique"
-    },
-    {
-      "index": 9,
-      "type": "photo"
-    },
-    {
-      "index": 10,
-      "type": "mot"
-    },
-    {
-      "index": 11,
-      "type": "emojis"
-    },
-    {
-      "index": 12,
-      "type": "malchance"
-    },
-    {
-      "index": 13,
-      "type": "nombre"
-    },
-    {
-      "index": 14,
-      "type": "dessin"
-    },
-    {
-      "index": 15,
-      "type": "chance"
-    },
-    {
-      "index": 16,
-      "type": "gif"
-    },
-    {
-      "index": 17,
-      "type": "musique"
-    },
-    {
-      "index": 18,
-      "type": "piege"
-    },
-    {
-      "index": 19,
-      "type": "photo"
-    },
-    {
-      "index": 20,
-      "type": "mot"
-    },
-    {
-      "index": 21,
-      "type": "tremplin"
-    },
-    {
-      "index": 22,
-      "type": "emojis"
-    },
-    {
-      "index": 23,
-      "type": "malchance"
-    },
-    {
-      "index": 24,
-      "type": "dessin"
-    },
-    {
-      "index": 25,
-      "type": "nombre"
-    },
-    {
-      "index": 26,
-      "type": "chance"
-    },
-    {
-      "index": 27,
-      "type": "gif"
-    },
-    {
-      "index": 28,
-      "type": "malchance"
-    },
-    {
-      "index": 29,
-      "type": "musique"
-    },
-    {
-      "index": 30,
-      "type": "photo"
-    },
-    {
-      "index": 31,
-      "type": "piege"
-    },
-    {
-      "index": 32,
-      "type": "mot"
-    },
-    {
-      "index": 33,
-      "type": "emojis"
-    },
-    {
-      "index": 34,
-      "type": "chance"
-    },
-    {
-      "index": 35,
-      "type": "dessin"
-    },
-    {
-      "index": 36,
-      "type": "malchance"
-    },
-    {
-      "index": 37,
-      "type": "gif"
-    },
-    {
-      "index": 38,
-      "type": "musique"
-    },
-    {
-      "index": 39,
-      "type": "photo"
-    },
-    {
-      "index": 40,
-      "type": "arrivee"
-    }
+    {"index":0,"type":"depart"},
+    {"index":1,"type":"mot"},
+    {"index":2,"type":"emojis"},
+    {"index":3,"type":"nombre"},
+    {"index":4,"type":"dessin"},
+    {"index":5,"type":"tremplin"},
+    {"index":6,"type":"gif"},
+    {"index":7,"type":"musique"},
+    {"index":8,"type":"photo"},
+    {"index":9,"type":"chance"},
+    {"index":10,"type":"mot"},
+    {"index":11,"type":"dessin"},
+    {"index":12,"type":"emojis"},
+    {"index":13,"type":"musique"},
+    {"index":14,"type":"malchance"},
+    {"index":15,"type":"nombre"},
+    {"index":16,"type":"photo"},
+    {"index":17,"type":"gif"},
+    {"index":18,"type":"chance"},
+    {"index":19,"type":"emojis"},
+    {"index":20,"type":"mot"},
+    {"index":21,"type":"photo"},
+    {"index":22,"type":"tremplin"},
+    {"index":23,"type":"nombre"},
+    {"index":24,"type":"musique"},
+    {"index":25,"type":"piege"},
+    {"index":26,"type":"gif"},
+    {"index":27,"type":"malchance"},
+    {"index":28,"type":"dessin"},
+    {"index":29,"type":"mot"},
+    {"index":30,"type":"emojis"},
+    {"index":31,"type":"chance"},
+    {"index":32,"type":"nombre"},
+    {"index":33,"type":"dessin"},
+    {"index":34,"type":"piege"},
+    {"index":35,"type":"gif"},
+    {"index":36,"type":"malchance"},
+    {"index":37,"type":"musique"},
+    {"index":38,"type":"photo"},
+    {"index":39,"type":"mot"},
+    {"index":40,"type":"dessin"},
+    {"index":41,"type":"tremplin"},
+    {"index":42,"type":"emojis"},
+    {"index":43,"type":"piege"},
+    {"index":44,"type":"musique"},
+    {"index":45,"type":"chance"},
+    {"index":46,"type":"nombre"},
+    {"index":47,"type":"photo"},
+    {"index":48,"type":"gif"},
+    {"index":49,"type":"malchance"},
+    {"index":50,"type":"emojis"},
+    {"index":51,"type":"mot"},
+    {"index":52,"type":"piege"},
+    {"index":53,"type":"photo"},
+    {"index":54,"type":"tremplin"},
+    {"index":55,"type":"nombre"},
+    {"index":56,"type":"musique"},
+    {"index":57,"type":"gif"},
+    {"index":58,"type":"chance"},
+    {"index":59,"type":"dessin"},
+    {"index":60,"type":"malchance"},
+    {"index":61,"type":"mot"},
+    {"index":62,"type":"emojis"},
+    {"index":63,"type":"arrivee"}
   ]
 }

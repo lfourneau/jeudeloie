@@ -1,25 +1,53 @@
-import type { CaseType } from "@rules";
+import { type CaseType, FINISH, MAX_TURNS } from "@rules";
+import type { IconName } from "./Icon";
 
-/** Apparence et description de chaque type de case (plateau, mini-plateau, légende). */
-export const CASE_STYLE: Record<CaseType, { fill: string; bg: string; icon: string; label: string; help: string }> = {
-  depart: { fill: "fill-mint", bg: "bg-mint text-night", icon: "🏁", label: "Départ", help: "Le premier tour se joue avec un mot." },
-  arrivee: { fill: "fill-gold", bg: "bg-gold text-night", icon: "💞", label: "Arrivée", help: "Atteignez-la en 15 tours pour gagner." },
-  mot: { fill: "fill-sky", bg: "bg-sky", icon: "🔤", label: "Mot", help: "Répondre en un seul mot." },
-  nombre: { fill: "fill-lilac", bg: "bg-lilac", icon: "🔢", label: "Nombre", help: "Répondre par un nombre." },
-  emojis: { fill: "fill-rose", bg: "bg-rose", icon: "😍", label: "Emojis", help: "Répondre avec 1 à 3 emojis." },
-  dessin: { fill: "fill-peach", bg: "bg-peach", icon: "🎨", label: "Dessin", help: "Dessiner la réponse en 60 secondes." },
-  photo: { fill: "fill-teal", bg: "bg-teal", icon: "📷", label: "Photo", help: "Prendre ou choisir une photo." },
-  musique: { fill: "fill-orchid", bg: "bg-orchid", icon: "🎵", label: "Musique", help: "Choisir un morceau, l'autre écoute un extrait." },
-  gif: { fill: "fill-lime", bg: "bg-lime", icon: "🎞️", label: "GIF", help: "Choisir un GIF animé." },
-  chance: { fill: "fill-gold", bg: "bg-gold text-night", icon: "🍀", label: "Chance", help: "Une carte fait avancer de 1 à 3 cases." },
-  malchance: { fill: "fill-slate", bg: "bg-slate", icon: "🌧️", label: "Malchance", help: "Une carte fait reculer de 1 à 3 cases." },
-  piege: { fill: "fill-ember", bg: "bg-ember", icon: "🕳️", label: "Piège", help: "Recule de 3 cases." },
-  tremplin: { fill: "fill-mint", bg: "bg-mint text-night", icon: "🦘", label: "Tremplin", help: "Avance de 2 cases." },
+/**
+ * Apparence de chaque type de case (plateau, mini-plateau, légende).
+ * Cases réponse = lavis aquarelle ; cases spéciales = timbres ; départ et arrivée = cachets.
+ */
+export const CASE_STYLE: Record<
+  CaseType,
+  { kind: "lavis" | "timbre" | "cachet"; bg: string; icon: IconName; label: string; help: string }
+> = {
+  depart: { kind: "cachet", bg: "cachet", icon: "depart", label: "Départ", help: "Le premier tour se joue avec un mot." },
+  arrivee: {
+    kind: "cachet",
+    bg: "cachet",
+    icon: "arrivee",
+    label: "Arrivée",
+    help: `Atteignez la case ${FINISH} en ${MAX_TURNS} tours pour vous retrouver.`,
+  },
+  mot: { kind: "lavis", bg: "lavis-ocre", icon: "mot", label: "Un mot", help: "Répondre en un seul mot." },
+  nombre: { kind: "lavis", bg: "lavis-bleu", icon: "nombre", label: "Un chiffre", help: "Répondre par un nombre." },
+  emojis: { kind: "lavis", bg: "lavis-ocre-points", icon: "emojis", label: "Des emojis", help: "Répondre avec 1 à 3 emojis." },
+  dessin: { kind: "lavis", bg: "lavis-sauge", icon: "dessin", label: "Un dessin", help: "Dessiner la réponse en 60 secondes." },
+  photo: { kind: "lavis", bg: "lavis-rose", icon: "photo", label: "Une photo", help: "Prendre ou choisir une photo." },
+  musique: {
+    kind: "lavis",
+    bg: "lavis-bleu-hachures",
+    icon: "musique",
+    label: "Une musique",
+    help: "Choisir un morceau, l'autre écoute un extrait.",
+  },
+  gif: { kind: "lavis", bg: "lavis-sauge-hachures", icon: "gif", label: "Un GIF", help: "Choisir un GIF animé." },
+  chance: { kind: "timbre", bg: "timbre", icon: "chance", label: "Chance", help: "Une carte fait avancer de 1 à 3 cases." },
+  malchance: { kind: "timbre", bg: "timbre", icon: "malchance", label: "Malchance", help: "Une carte fait reculer de 1 à 3 cases." },
+  piege: { kind: "timbre", bg: "timbre", icon: "piege", label: "Piège", help: "Recule de 3 cases." },
+  tremplin: { kind: "timbre", bg: "timbre", icon: "tremplin", label: "Tremplin", help: "Avance de 2 cases." },
 };
 
 export const LEGEND_GROUPS: { title: string; types: CaseType[] }[] = [
   { title: "Cases réponse", types: ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"] },
-  { title: "Cases spéciales", types: ["chance", "malchance", "tremplin", "piege"] },
+  { title: "Timbres", types: ["chance", "malchance", "tremplin", "piege"] },
 ];
 
-export const LEGEND_NOTE = "Sur une case spéciale, le tour suivant se joue avec le média de la dernière case réponse.";
+export const LEGEND_NOTE = "Sur un timbre, le tour suivant se joue avec le média de la dernière case réponse.";
+
+/** Forme irrégulière, rotation et décalage fixes d'une case, déduits de son numéro. */
+export function caseLook(index: number) {
+  return {
+    shape: `forme-${(index % 4) + 1}`,
+    rotate: ((index * 37) % 7) - 3, // −3° à +3°
+    shift: ((index * 53) % 5) - 2, // −2 à +2 (en % de la case)
+  };
+}
