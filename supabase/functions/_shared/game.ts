@@ -14,9 +14,11 @@ import {
   type Phase,
   otherSeat,
   parseCategories,
+  isLinkedImagePath,
   pickCategory,
   type QuestionBank,
   resolveTurn,
+  roundContext,
 } from "./rules.ts";
 
 export const board = boardJson as Board;
@@ -209,6 +211,7 @@ export async function prepareRound(
       answerer_seat: answererSeat,
       categorie: q.categorie,
       niveau: q.niveau,
+      contexte: roundContext(media, q),
     },
     newSecret: {
       round_id: roundId,
@@ -233,8 +236,12 @@ export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: P
     finalScore: final,
   });
 
+  // Image venue d'un lien : effacée dès que le tour est résolu (choix de confidentialité).
+  const linked = isLinkedImagePath(round.answer_media_path) ? round.answer_media_path : null;
+
   const roundPatch: Partial<Round> & { id: string } & Record<string, unknown> = {
     ...patch,
+    ...(linked ? { answer_media_path: null, answer_media: { kind: "lien", efface: true } } : {}),
     id: round.id,
     final_score: final,
     wheel_level: turn.level,
@@ -257,6 +264,7 @@ export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: P
       },
       roomStatus: "finished",
     });
+    await removeLinkedImage(linked);
     return;
   }
 
@@ -275,4 +283,12 @@ export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: P
       current_round_id: next.roundId,
     },
   });
+  await removeLinkedImage(linked);
+}
+
+/** Supprime une image venue d'un lien. Un échec n'empêche pas la partie de continuer. */
+async function removeLinkedImage(path: string | null): Promise<void> {
+  if (!path) return;
+  const { error } = await adminClient().storage.from("answers").remove([path]);
+  if (error) console.error("Image du lien non supprimée", path, error.message);
 }

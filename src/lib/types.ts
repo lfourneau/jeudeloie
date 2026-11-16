@@ -42,7 +42,7 @@ export interface Round {
   answerer_seat: 0 | 1;
   answer_text: string | null;
   answer_media_path: string | null;
-  answer_media: MusicMedia | GifMedia | null;
+  answer_media: MusicMedia | GifMedia | LinkMedia | null;
   guess_text: string | null;
   llm_score: number | null;
   llm_comment: string | null;
@@ -66,6 +66,14 @@ export interface Round {
   /** Catégorie de la question (null : section générique). */
   categorie: Category | null;
   niveau: 1 | 2 | null;
+  /** Cases mot et nombre : nature de la réponse, montrée au devineur (« un lieu »). */
+  contexte: string | null;
+}
+
+/** Photo venue d'un lien : l'image est effacée du stockage dès la fin du tour. */
+export interface LinkMedia {
+  kind: "lien";
+  efface: boolean;
 }
 
 export interface Secret {

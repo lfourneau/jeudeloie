@@ -42,6 +42,7 @@ function round(o: Partial<Round> & { id: string; turn_number: number }): Round {
     joker_choices: null,
     categorie: "mignon",
     niveau: null,
+    contexte: null,
     ...o,
   };
 }
@@ -131,11 +132,23 @@ const SCREENS: Record<string, () => Screen> = {
     data: data(state({ position: 44 }), [round({ id: "r5", turn_number: 5, media: "emojis", answer_text: null, categorie: "spicy", niveau: 2 })], undefined, ["r5"]),
     user: "u0",
   }),
-  "answer-mot": () => ({ data: data(state({}), [answering("mot")], undefined, ["r5"]), user: "u0" }),
+  "answer-mot": () => ({
+    data: data(state({}), [round({ id: "r5", turn_number: 5, media: "mot", answer_text: null, contexte: "un moment" })], undefined, ["r5"]),
+    user: "u0",
+  }),
+  "answer-photo": () => ({ data: data(state({}), [answering("photo")], undefined, ["r5"]), user: "u0" }),
   "answer-emojis": () => ({ data: data(state({}), [answering("emojis")], undefined, ["r5"]), user: "u0" }),
   "answer-dessin": () => ({ data: data(state({}), [answering("dessin")], undefined, ["r5"]), user: "u0" }),
   "answer-attente": () => ({ data: data(state({}), [answering("mot")]), user: "u1" }),
-  "guess": () => ({ data: data(state({ phase: "guessing" }), [guessing({ categorie: "drole" })]), user: "u1" }),
+  "guess": () => ({ data: data(state({ phase: "guessing" }), [guessing({ contexte: "un moment" })]), user: "u1" }),
+  "guess-nombre": () => ({
+    data: data(state({ phase: "guessing" }), [guessing({ media: "nombre", answer_text: "7", contexte: "une note sur 10" })]),
+    user: "u1",
+  }),
+  "reveal-lien-efface": () => ({
+    data: data(state({ phase: "reveal" }), [revealed({ media: "photo", answer_text: null, answer_media: { kind: "lien", efface: true } })], undefined, ["r5"]),
+    user: "u1",
+  }),
   "guess-indices": () => ({
     data: data(state({ phase: "guessing", inventory: ["choix"] }), [guessing({ joker_keyword: "week-end", joker_topic: "Nos retrouvailles" })]),
     user: "u1",

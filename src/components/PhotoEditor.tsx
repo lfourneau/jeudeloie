@@ -1,4 +1,4 @@
-import { MAX_UPLOAD_BYTES } from "@rules";
+import { MAX_UPLOAD_BYTES, validateImageUrl } from "@rules";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { Button, Dots, ErrorText } from "./ui";
@@ -24,15 +24,75 @@ export async function compressImage(file: Blob): Promise<Blob> {
 }
 
 /** Photo prise avec l'appareil ou choisie dans la galerie, compressée côté client. */
-export function PhotoEditor({ onDone, busy }: { onDone: (jpeg: Blob) => void; busy: boolean }) {
+export function PhotoEditor({
+  onDone,
+  onLink,
+  busy,
+}: {
+  onDone: (jpeg: Blob) => void;
+  /** Lien d'image : le serveur la télécharge (puis l'efface à la fin du tour). */
+  onLink: (url: string) => void;
+  busy: boolean;
+}) {
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkMode, setLinkMode] = useState(false);
+  const [link, setLink] = useState("");
+  const [linkOk, setLinkOk] = useState<boolean | null>(null);
+  const linkValid = validateImageUrl(link);
 
   useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+
+  if (linkMode) {
+    return (
+      <div className="flex flex-col gap-3">
+        <label htmlFor="lien-image" className="font-display text-lg font-bold">
+          Le lien de l'image
+        </label>
+        <input
+          id="lien-image"
+          type="url"
+          inputMode="url"
+          autoFocus
+          value={link}
+          onChange={(e) => {
+            setLink(e.target.value);
+            setLinkOk(null);
+            setError(null);
+          }}
+          placeholder="https://…/image.jpg"
+          autoComplete="off"
+          className="champ w-full px-4 py-3 text-[16px]"
+        />
+        {linkValid.ok && (
+          <img
+            src={linkValid.value}
+            alt="Aperçu de l'image du lien"
+            referrerPolicy="no-referrer"
+            onLoad={() => setLinkOk(true)}
+            onError={() => setLinkOk(false)}
+            className={`max-h-80 w-full rotate-[-0.8deg] border-[6px] border-lettre bg-lettre object-contain shadow-[0_10px_20px_-14px_rgba(31,47,74,.6)] ${linkOk === false ? "hidden" : ""}`}
+          />
+        )}
+        <p className="text-[14px] text-muted italic">
+          {linkOk === false
+            ? "Ce lien ne s'affiche pas comme une image : choisis le lien de l'image elle-même (clic droit, « Copier l'adresse de l'image »)."
+            : "L'image est copiée pour ton partenaire, puis effacée dès la fin du tour. JPEG, PNG, WebP ou GIF, 5 Mo maximum."}
+        </p>
+        <ErrorText>{error ?? (link.trim() && !linkValid.ok ? linkValid.error : null)}</ErrorText>
+        <Button onClick={() => linkValid.ok && onLink(linkValid.value)} disabled={!linkValid.ok || linkOk === false} busy={busy}>
+          Envoyer cette image
+        </Button>
+        <Button variant="ghost" onClick={() => setLinkMode(false)} disabled={busy}>
+          Plutôt prendre ou choisir une photo
+        </Button>
+      </div>
+    );
+  }
 
   const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,12 +122,15 @@ export function PhotoEditor({ onDone, busy }: { onDone: (jpeg: Blob) => void; bu
           {working ? <Dots /> : <Icon name="photo" size={64} strokeWidth={1.4} />}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary" onClick={() => camera.current?.click()} disabled={working || busy}>
+      <div className="grid grid-cols-3 gap-2">
+        <Button variant="secondary" className="!px-2" onClick={() => camera.current?.click()} disabled={working || busy}>
           <Icon name="photo" size={20} /> Prendre
         </Button>
-        <Button variant="secondary" onClick={() => gallery.current?.click()} disabled={working || busy}>
+        <Button variant="secondary" className="!px-2" onClick={() => gallery.current?.click()} disabled={working || busy}>
           <Icon name="galerie" size={20} /> Galerie
+        </Button>
+        <Button variant="secondary" className="!px-2" onClick={() => setLinkMode(true)} disabled={working || busy}>
+          <Icon name="lien" size={20} /> Lien
         </Button>
       </div>
       <ErrorText>{error}</ErrorText>

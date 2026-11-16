@@ -1,4 +1,4 @@
-import { type Category, FINISH, MAX_TURNS } from "@rules";
+import { FINISH, MAX_TURNS } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
@@ -12,14 +12,12 @@ export function BoardPanel({
   turn,
   startName,
   endName,
-  activeCategories,
 }: {
   position: number;
   pawn: string;
   turn?: number;
   startName?: string;
   endName?: string;
-  activeCategories?: readonly Category[];
 }) {
   return (
     <Card className="!px-3 !pt-3 !pb-4 sm:!px-5">
@@ -32,7 +30,7 @@ export function BoardPanel({
           </p>
         </div>
         <div className="mx-auto" style={{ maxWidth: "min(100%, calc(100dvh - 8.5rem))" }}>
-          <SquareBoard position={position} pawn={pawn} startName={startName} endName={endName} activeCategories={activeCategories} />
+          <SquareBoard position={position} pawn={pawn} startName={startName} endName={endName} />
         </div>
         <p className="mt-2 hidden text-center text-[13px] text-muted italic [@media(hover:hover)]:block">
           Passe la souris sur une case pour savoir ce qu'elle fait.

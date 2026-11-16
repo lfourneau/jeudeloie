@@ -1,4 +1,4 @@
-import { type CaseType, type Category, FINISH, MAX_TURNS, SPICY2_FROM } from "@rules";
+import { type CaseType, type Category, FINISH, MAX_TURNS } from "@rules";
 import type { IconName } from "./Icon";
 
 /**
@@ -55,6 +55,3 @@ export const CATEGORY_STYLE: Record<Category, { label: string; icon: IconName; b
   spicy: { label: "Spicy", icon: "piment", bg: "lavis-cachet-hachures", help: "Séduction et complicité, jamais explicite" },
   profond: { label: "Profond", icon: "pensee", bg: "lavis-bleu", help: "La distance, les peurs, les envies, ce qui manque" },
 };
-
-/** Rappel du niveau 🌶️🌶️, affiché dans les réglages et les infobulles. */
-export const SPICY2_NOTE = `Plus osé à partir de la case ${SPICY2_FROM}`;

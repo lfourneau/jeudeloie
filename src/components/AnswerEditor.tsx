@@ -40,7 +40,13 @@ export function AnswerEditor({
       editor = <DrawingEditor busy={busy} onDone={(png) => run(() => actions.uploadAnswerImage(roomId, png))} />;
       break;
     case "photo":
-      editor = <PhotoEditor busy={busy} onDone={(jpeg) => run(() => actions.uploadAnswerImage(roomId, jpeg))} />;
+      editor = (
+        <PhotoEditor
+          busy={busy}
+          onDone={(jpeg) => run(() => actions.uploadAnswerImage(roomId, jpeg))}
+          onLink={(url) => run(() => actions.importImage(roomId, url))}
+        />
+      );
       break;
     case "musique":
       editor = <MusicPicker roomId={roomId} busy={busy} onDone={(id) => run(async () => id)} />;

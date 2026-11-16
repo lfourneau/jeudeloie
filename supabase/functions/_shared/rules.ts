@@ -31,6 +31,8 @@ export interface CategoryQuestion {
   medias: Media[];
   keyword: string;
   topic: string;
+  /** Si la question se joue en mot ou en nombre : nature de la réponse, montrée au devineur. */
+  contexte?: string;
 }
 
 /** Banque complète : section générique (questions écrites pour un média) + questions par catégorie. */
@@ -48,6 +50,7 @@ export interface PlayableQuestion {
   topic: string;
   categorie: Category | null;
   niveau: 1 | 2 | null;
+  contexte: string | null;
 }
 export interface Board {
   cases: BoardCase[];
@@ -62,6 +65,8 @@ export interface Question {
   keyword: string;
   /** Joker « thème » : le sujet précis de la question. */
   topic: string;
+  /** Cases mot et nombre : nature de la réponse, montrée au devineur (« un lieu »). */
+  contexte?: string;
 }
 
 export type Phase =
@@ -271,7 +276,16 @@ export function pickCategory(
 }
 
 function fromGeneric(q: Question): PlayableQuestion {
-  return { id: q.id, text: q.text, theme: q.theme, keyword: q.keyword, topic: q.topic, categorie: null, niveau: null };
+  return {
+    id: q.id,
+    text: q.text,
+    theme: q.theme,
+    keyword: q.keyword,
+    topic: q.topic,
+    categorie: null,
+    niveau: null,
+    contexte: q.contexte ?? null,
+  };
 }
 
 function fromCategory(q: CategoryQuestion): PlayableQuestion {
@@ -283,6 +297,7 @@ function fromCategory(q: CategoryQuestion): PlayableQuestion {
     topic: q.topic,
     categorie: q.categorie,
     niveau: q.categorie === "spicy" ? (q.niveau ?? 1) : null,
+    contexte: q.contexte ?? null,
   };
 }
 
@@ -323,6 +338,101 @@ export function drawRoundQuestion(
   if (freshGeneric.length > 0) return fromGeneric(pick(freshGeneric, rng));
   if (pool.length > 0) return fromCategory(pick(pool, rng));
   return fromGeneric(drawQuestion(bank.generique, media, usedIds, rng));
+}
+
+// ---------- Contexte vague (cases mot et nombre) ----------
+
+/** Natures de réponse possibles : volontairement vagues, elles orientent sans donner la question. */
+export const CONTEXTES_MOT = [
+  "un lieu",
+  "un objet",
+  "une personne ou un surnom",
+  "un sentiment",
+  "à manger ou à boire",
+  "une activité",
+  "un trait de caractère",
+  "un animal",
+  "un moment",
+  "une partie du corps",
+  "un vêtement",
+  "une idée",
+  "un des choix proposés",
+] as const;
+
+export const CONTEXTES_NOMBRE = [
+  "une note sur 10",
+  "un nombre de jours",
+  "un nombre d'heures",
+  "un nombre de minutes",
+  "un nombre de secondes",
+  "un âge",
+  "un nombre d'années",
+  "un nombre de mois",
+  "des kilomètres",
+  "des euros",
+  "une heure de la journée",
+  "des degrés",
+  "un nombre de fois",
+  "une quantité",
+] as const;
+
+/** Contexte montré au devineur : seulement pour les cases mot et nombre. */
+export function roundContext(media: Media, q: { contexte: string | null }): string | null {
+  return media === "mot" || media === "nombre" ? q.contexte : null;
+}
+
+// ---------- Image par lien (case photo) ----------
+
+export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+export const IMPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+
+/**
+ * Lien d'image collé par le joueur, téléchargé ensuite par le serveur.
+ * https seulement, sans identifiants, et jamais vers une machine interne (IP littérale, localhost…).
+ */
+export function validateImageUrl(raw: unknown): ValidationResult {
+  if (typeof raw !== "string" || !raw.trim()) return { ok: false, error: "Colle le lien d'une image." };
+  const s = raw.trim();
+  if (s.length > 2000) return { ok: false, error: "Ce lien est trop long." };
+  let url: URL;
+  try {
+    url = new URL(s);
+  } catch {
+    return { ok: false, error: "Ce n'est pas un lien valide." };
+  }
+  if (url.protocol !== "https:") return { ok: false, error: "Le lien doit commencer par https://" };
+  if (url.username || url.password) return { ok: false, error: "Ce lien n'est pas accepté." };
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  const ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+  const ipv6 = host.startsWith("[") || host.includes(":");
+  if (
+    ipv4 ||
+    ipv6 ||
+    !host.includes(".") ||
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  ) {
+    return { ok: false, error: "Ce lien n'est pas accepté." };
+  }
+  return { ok: true, value: url.toString() };
+}
+
+export function isImportedImageType(contentType: string | null): boolean {
+  const t = (contentType ?? "").split(";")[0].trim().toLowerCase();
+  return (IMPORTED_IMAGE_TYPES as readonly string[]).includes(t);
+}
+
+/** Type réel d'une image d'après ses premiers octets (on ne se fie pas qu'à l'en-tête du site). */
+export function sniffImageType(b: Uint8Array): (typeof IMPORTED_IMAGE_TYPES)[number] | null {
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+  if (b.length >= 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return "image/gif";
+  if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) {
+    return "image/webp";
+  }
+  return null;
 }
 
 // ---------- Questions ----------
@@ -429,6 +539,15 @@ export function answerFilePath(roomId: string, roundId: string, media: Media): s
   return `${roomId}/${roundId}.${media === "photo" ? "jpg" : "png"}`;
 }
 
+/** Chemin d'une image téléchargée depuis un lien : à part, pour la reconnaître et l'effacer après le tour. */
+export function linkedImagePath(roomId: string, roundId: string): string {
+  return `${roomId}/${roundId}-lien`;
+}
+
+export function isLinkedImagePath(path: string | null | undefined): boolean {
+  return !!path && path.endsWith("-lien");
+}
+
 /**
  * Valide la réponse brute envoyée par le client.
  * Pour dessin/photo, `ctx` donne la salle et le tour : seul le chemin attendu est accepté.
@@ -466,7 +585,9 @@ export function validateAnswer(
     case "dessin":
     case "photo": {
       if (!ctx) return { ok: false, error: "Contexte manquant." };
-      if (s !== answerFilePath(ctx.roomId, ctx.roundId, media)) return { ok: false, error: "Fichier invalide." };
+      const allowed = [answerFilePath(ctx.roomId, ctx.roundId, media)];
+      if (media === "photo") allowed.push(linkedImagePath(ctx.roomId, ctx.roundId));
+      if (!allowed.includes(s)) return { ok: false, error: "Fichier invalide." };
       return { ok: true, value: s };
     }
     case "musique": {

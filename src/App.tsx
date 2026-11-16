@@ -222,7 +222,6 @@ export function GameView({
       turn={turn}
       startName={seatName(0)}
       endName={seatName(1)}
-      activeCategories={data.game.categories}
     />
   );
   // Entre deux manches (roue + déplacement du pion), le plateau s'affiche toujours.

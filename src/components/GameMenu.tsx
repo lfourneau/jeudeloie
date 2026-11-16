@@ -63,7 +63,7 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
         aria-label="Menu de la partie"
         className="pilule flex min-h-11 min-w-11 items-center justify-center gap-1.5 border-[1.5px] border-encre/60 bg-lettre px-3 font-display font-bold"
       >
-        <Icon name="menu" size={20} /> <span className="hidden sm:inline">Partie</span>
+        <Icon name="menu" size={20} /> <span className="libelle hidden sm:inline">Partie</span>
       </button>
       <AnimatePresence>
         {open && (

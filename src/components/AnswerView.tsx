@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import type { GifMedia, MusicMedia, Round } from "../lib/types";
+import type { GifMedia, LinkMedia, MusicMedia, Round } from "../lib/types";
 import { Icon } from "./Icon";
 import { Dots } from "./ui";
 
@@ -26,6 +26,19 @@ function useSignedUrl(path: string | null) {
 export function AnswerView({ round, size = "lg" }: { round: Round; size?: "lg" | "sm" }) {
   const small = size === "sm";
   const image = useSignedUrl(round.answer_media_path);
+
+  // Photo venue d'un lien : effacée du stockage à la fin du tour.
+  if (round.media === "photo" && (round.answer_media as LinkMedia | null)?.efface) {
+    return (
+      <div
+        className={`mx-auto flex flex-col items-center justify-center gap-1 border-2 border-dashed border-encre/30 bg-papier/60 px-4 text-center text-muted italic ${small ? "h-20 text-[13px]" : "h-40"}`}
+      >
+        <Icon name="galerie" size={small ? 22 : 36} strokeWidth={1.4} />
+        Image effacée après le tour
+        {!small && <span className="text-[13px]">Elle venait d'un lien.</span>}
+      </div>
+    );
+  }
 
   if (round.media === "dessin" || round.media === "photo") {
     return (

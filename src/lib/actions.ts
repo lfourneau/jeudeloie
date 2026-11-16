@@ -53,6 +53,9 @@ export const actions = {
   setPawn: (room_id: string, pawn: string) => call("set-pawn", { room_id, pawn }),
   searchMedia: (room_id: string, q: string) =>
     call<{ results: (MusicMedia | GifMedia)[] }>("search-media", { room_id, q }),
+  /** Case photo : le serveur télécharge l'image du lien et renvoie son chemin dans le stockage. */
+  importImage: async (room_id: string, url: string): Promise<string> =>
+    (await call<{ path: string }>("import-image", { room_id, url })).path,
   /** Envoie une image (dessin, photo) au chemin imposé par le serveur et renvoie ce chemin. */
   uploadAnswerImage: async (room_id: string, blob: Blob): Promise<string> => {
     const { path, token } = await call<{ path: string; token: string }>("upload-url", { room_id });

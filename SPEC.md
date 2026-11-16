@@ -420,3 +420,20 @@ Spicy a deux niveaux : 1 (léger) partout, et 2 (plus osé) seulement à partir 
 **Réglages de partie** : en salle d'attente, l'hôte (siège 0) coche les catégories, via la fonction `set-categories` et `game_state.categories`. Il en reste toujours au moins une. Les cases d'une catégorie désactivée piochent dans une catégorie active au hasard ; elles apparaissent pâlies sur le plateau. Le partenaire voit le choix en lecture seule.
 
 **Affichage** : le badge de catégorie (avec un second piment au niveau 2) s'affiche sur la question secrète, chez le devineur et à la révélation. Les colonnes `rounds.categorie` et `rounds.niveau` sont lisibles par les deux joueurs.
+
+## Évolutions V6 : couleurs par média, image par lien, indice vague
+
+**Plateau** : les cases réponse sont de nouveau peintes selon leur média (comme en V3), car les couleurs de catégorie contrastaient trop peu. La catégorie n'est plus affichée pendant le tour, car elle n'aidait pas à deviner. Le tirage par catégorie et le réglage de l'hôte en salle d'attente restent.
+
+**Image par lien** (cases photo) : en plus de « Prendre » et « Galerie », un bouton « Lien » permet de coller l'adresse d'une image. La fonction `import-image` la télécharge côté serveur :
+- `https` seulement, aucune machine interne (IP littérale, localhost, `.local`, `.internal`), règle revérifiée à chaque redirection (3 au plus) ;
+- 8 s et 5 Mo au plus ;
+- type vérifié par l'en-tête et par les premiers octets : JPEG, PNG, WebP ou GIF.
+
+L'image est rangée dans le bucket privé au chemin `<salle>/<tour>-lien`, puis **supprimée dès que le tour est résolu** (`spinAndMove`). La réponse affiche ensuite « Image effacée après le tour ».
+
+**Indice vague** (cases mot et nombre) : chaque question jouable en mot ou en nombre porte un `contexte` qui dit seulement la nature de la réponse :
+- pour un mot : « un lieu », « un sentiment », « une idée »… ;
+- pour un nombre : « une note sur 10 », « un nombre de jours »…
+
+Les deux listes sont fermées (`CONTEXTES_MOT`, `CONTEXTES_NOMBRE`). Le contexte est copié dans `rounds.contexte` au début du tour. Le devineur le voit sous la réponse (« Indice : la réponse est un lieu »), et le répondant sait que son partenaire n'aura que cet indice.

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { AnswerEditor } from "../components/AnswerEditor";
-import { CategoryBadge } from "../components/Categories";
 import { Icon } from "../components/Icon";
 import { StampIn } from "../components/Juice";
 import { Cachet, Card, Dots, Label, Letter, MEDIA_LABEL } from "../components/ui";
@@ -17,11 +16,6 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
           {partner.name} t'écrit… <Dots />
         </p>
         <p className="mt-2 text-muted italic">Avec {media.label}. Prépare-toi à deviner la question.</p>
-        {round.categorie && (
-          <p className="mt-3">
-            <CategoryBadge categorie={round.categorie} niveau={round.niveau} />
-          </p>
-        )}
       </Card>
     );
   }
@@ -33,17 +27,12 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
         animate={{ rotateX: 0 }}
         transition={{ type: "spring", damping: 14 }}
       >
-        <div className="absolute -top-3 left-3 z-10">
+        <div className="absolute -top-6 left-3 z-10">
           <StampIn delay={0.35} rotate={-6}>
             <Cachet>À toi !</Cachet>
           </StampIn>
         </div>
         <Letter stamp={<Icon name={media.icon} size={26} />}>
-          {round.categorie && (
-            <div className="mt-1 leading-none">
-              <CategoryBadge categorie={round.categorie} niveau={round.niveau} />
-            </div>
-          )}
           <Label>Question secrète · réponds avec {media.label}</Label>
           <p className="mt-1 pr-8 font-display text-[26px] leading-[32px] font-bold">{secret ? secret.question_text : <Dots />}</p>
         </Letter>
@@ -51,7 +40,10 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
       <Card tilt={0.3}>
         <AnswerEditor media={round.media} roomId={data.room.id} onSubmit={async (v) => void (await actions.submitAnswer(data.room.id, v))} />
       </Card>
-      <p className="text-center text-[14px] text-muted italic">{partner.name} recevra ta réponse, pas la question.</p>
+      <p className="text-center text-[14px] text-muted italic">
+        {partner.name} recevra ta réponse, pas la question
+        {round.contexte ? <>, avec seulement cet indice : « {round.contexte} »</> : null}.
+      </p>
     </>
   );
 }

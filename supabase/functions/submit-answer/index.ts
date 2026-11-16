@@ -1,13 +1,14 @@
 // Le répondant envoie sa réponse dans le média imposé.
-// Dessin/photo : le fichier doit déjà être dans le bucket, au chemin imposé, et faire au plus 1 Mo.
+// Dessin/photo : le fichier doit déjà être dans le bucket, au chemin imposé, et faire au plus 1 Mo
+// (5 Mo pour une image téléchargée depuis un lien par import-image, effacée à la fin du tour).
 // Musique/GIF : on relit le morceau ou le GIF chez Deezer/GIPHY à partir de l'id.
 import { adminClient } from "../_shared/auth.ts";
 import { commit, isAnswerer, loadContext, requirePhase, requireRound } from "../_shared/game.ts";
 import { handle, HttpError } from "../_shared/http.ts";
 import { getGif, getMusic } from "../_shared/media.ts";
-import { MAX_UPLOAD_BYTES, validateAnswer } from "../_shared/rules.ts";
+import { isLinkedImagePath, MAX_IMPORT_BYTES, MAX_UPLOAD_BYTES, validateAnswer } from "../_shared/rules.ts";
 
-async function checkUploadedFile(path: string): Promise<void> {
+async function checkUploadedFile(path: string, maxBytes: number): Promise<void> {
   const slash = path.lastIndexOf("/");
   const { data, error } = await adminClient()
     .storage.from("answers")
@@ -15,7 +16,7 @@ async function checkUploadedFile(path: string): Promise<void> {
   const file = data?.find((f) => f.name === path.slice(slash + 1));
   if (error || !file) throw new HttpError(400, "Image introuvable, renvoie-la.");
   const size = Number((file.metadata as { size?: number } | null)?.size ?? 0);
-  if (size > MAX_UPLOAD_BYTES) throw new HttpError(400, "Image trop lourde (1 Mo maximum).");
+  if (size > maxBytes) throw new HttpError(400, `Image trop lourde (${Math.round(maxBytes / 1048576)} Mo maximum).`);
 }
 
 Deno.serve(handle(async (req, body) => {
@@ -30,7 +31,13 @@ Deno.serve(handle(async (req, body) => {
   switch (round.media) {
     case "dessin":
     case "photo":
-      await checkUploadedFile(v.value);
+      if (isLinkedImagePath(v.value)) {
+        await checkUploadedFile(v.value, MAX_IMPORT_BYTES);
+        patch.answer_media = { kind: "lien", efface: false };
+      } else {
+        await checkUploadedFile(v.value, MAX_UPLOAD_BYTES);
+        patch.answer_media = null;
+      }
       patch.answer_media_path = v.value;
       break;
     case "musique": {

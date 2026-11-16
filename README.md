@@ -18,7 +18,7 @@ Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins 
    npx supabase db push --remote                              # tables, RLS, Realtime, fonctions SQL (sans --remote : base locale Docker)
    npx supabase secrets set OPENROUTER_API_KEY=sk-or-...      # clé du juge (ou ANTHROPIC_API_KEY=sk-ant-...)
    npx supabase secrets set GIPHY_API_KEY=...                 # clé gratuite sur developers.giphy.com (cases GIF)
-   npm run deploy:functions                                   # copie le contenu puis déploie les 17 fonctions (répondre « y » à la confirmation)
+   npm run deploy:functions                                   # copie le contenu puis déploie les 18 fonctions (répondre « y » à la confirmation)
    ```
 
 `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournies automatiquement aux fonctions.
@@ -97,6 +97,8 @@ content/                questions.json (section générique : 175 questions par 
 | Plateau | toujours visible | masqué pendant la manche, affiché entre deux manches ou à la demande | demande V4. |
 | Timbres | ~30 %, pas de contrainte d'arrivée | aucun effet ne peut atterrir sur un timbre | sans effet en chaîne, atterrir sur un piège ne faisait rien : le joueur croyait à un bug. |
 | Catégories | thèmes `leger`, `souvenirs`, `futur`, `profond` | 4 catégories avec couleur, dont Spicy à 2 niveaux, et les questions d'origine gardées en section générique de secours | demande V5 ; la case garde son média, la catégorie choisit le sujet. |
+| Plateau (V6) | couleur par catégorie (V5) | couleur par média | les couleurs de catégorie contrastaient trop peu ; la catégorie n'est plus affichée pendant le tour. |
+| Photo par lien | — | téléchargée par le serveur puis effacée à la fin du tour | demande V6 : l'image ne reste pas stockée. |
 | Quitter | — | « Quitter la partie » pour tous, « Recommencer la partie » pour l'hôte | demande V4. |
 
 **Limite connue** : pendant un appel, la note déjà donnée par l'un est lisible dans l'onglet Réseau de l'autre (elle n'est pas affichée à l'écran). À corriger en V2 en la stockant hors de `rounds`.

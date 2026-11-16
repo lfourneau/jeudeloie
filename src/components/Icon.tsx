@@ -39,7 +39,8 @@ export type IconName =
   | "fleur"
   | "rire"
   | "piment"
-  | "pensee";
+  | "pensee"
+  | "lien";
 
 const PATHS: Record<IconName, ReactNode> = {
   // bulle avec deux lignes d'écriture
@@ -244,6 +245,13 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M7.4 14.6c-2.6-.2-3.6-3.6-1.2-4.8-.3-2.8 3-4.4 5-2.6 1.4-2.4 5.4-2 6 .8 2.8-.2 3.8 3.6 1.2 4.8.4 2.4-2.2 3.8-4 2.6-1.6 1.6-4.4 1.4-5.4-.4-.6 0-1.2 0-1.6-.4Z" />
       <path d="M6.6 17.4h.1M4.8 19.8h.1" strokeWidth={2.6} />
+    </>
+  ),
+  // deux maillons de chaîne
+  lien: (
+    <>
+      <path d="M10.4 13.6c-1.4-1.4-1.4-3.6 0-5l2.6-2.6c1.4-1.4 3.6-1.4 5 0s1.4 3.6 0 5l-1.3 1.3" />
+      <path d="M13.6 10.4c1.4 1.4 1.4 3.6 0 5L11 18c-1.4 1.4-3.6 1.4-5 0s-1.4-3.6 0-5l1.3-1.3" />
     </>
   ),
   // haut-parleur et ondes

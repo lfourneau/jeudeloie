@@ -2,7 +2,6 @@ import { GUESS_MAX_LENGTH, type Joker, validateGuess } from "@rules";
 import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { AnswerView } from "../components/AnswerView";
-import { CategoryBadge } from "../components/Categories";
 import { Icon } from "../components/Icon";
 import { JOKER_INFO, JokerBar, JokerHints, usedJokers } from "../components/Jokers";
 import { StampIn } from "../components/Juice";
@@ -99,7 +98,7 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
   return (
     <>
       <Card tilt={-0.5} className="relative py-7">
-        <div className="absolute -top-3 left-3 z-10">
+        <div className="absolute -top-6 left-3 z-10">
           <StampIn delay={0.3} rotate={-6}>
             <Cachet>À toi !</Cachet>
           </StampIn>
@@ -107,12 +106,12 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
         <p className="titre mb-4 text-center text-2xl">
           {partner.name} t'a envoyé {MEDIA_LABEL[round.media].label}
         </p>
-        {round.categorie && (
-          <p className="-mt-2 mb-4 text-center">
-            <CategoryBadge categorie={round.categorie} niveau={round.niveau} />
+        <AnswerView round={round} />
+        {round.contexte && (
+          <p className="mx-auto mt-4 w-fit rotate-[-1deg] border-b-[1.5px] border-dashed border-encre/40 px-1 text-center text-[16px] italic">
+            <span className="font-display not-italic text-muted">Indice : </span>la réponse est {round.contexte}
           </p>
         )}
-        <AnswerView round={round} />
       </Card>
 
       <Card tilt={0.2} className="flex flex-col gap-4">

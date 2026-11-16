@@ -76,7 +76,7 @@ export function Lobby({
   return (
     <GameLayout
       showBoard
-      board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} activeCategories={data.game.categories} />}
+      board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}
     >
       <div className="flex justify-end gap-1.5">
         <SoundMenu />

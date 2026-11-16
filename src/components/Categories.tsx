@@ -7,25 +7,6 @@ import { CATEGORY_STYLE } from "./cases";
 import { Icon } from "./Icon";
 import { ErrorText } from "./ui";
 
-/** Étiquette de catégorie : pastille au lavis de la catégorie, icône au trait, et piments pour le niveau. */
-export function CategoryBadge({ categorie, niveau, className = "" }: { categorie: Category | null; niveau?: 1 | 2 | null; className?: string }) {
-  if (!categorie) return null;
-  const c = CATEGORY_STYLE[categorie];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-[14px_18px_12px_16px] border-[1.5px] border-encre/55 px-2.5 py-0.5 font-display text-[15px] font-bold text-encre ${c.bg} ${className}`}
-    >
-      <Icon name={c.icon} size={18} />
-      {c.label}
-      {categorie === "spicy" && niveau === 2 && (
-        <span className="inline-flex" aria-label="niveau plus osé">
-          <Icon name="piment" size={16} />
-        </span>
-      )}
-    </span>
-  );
-}
-
 /**
  * Réglages de partie, en salle d'attente : l'hôte coche les catégories de questions.
  * Une catégorie décochée voit ses cases piocher dans une catégorie active au hasard.

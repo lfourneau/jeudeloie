@@ -39,6 +39,14 @@ import {
   parseCategories,
   pickCategory,
   SPICY2_FROM,
+  CONTEXTES_MOT,
+  CONTEXTES_NOMBRE,
+  isImportedImageType,
+  isLinkedImagePath,
+  linkedImagePath,
+  roundContext,
+  sniffImageType,
+  validateImageUrl,
   resolveTurn,
   spinWheel,
   validateAnswer,
@@ -537,5 +545,79 @@ describe("catégories : tirage", () => {
     expect(parseCategories(["spicy", "x", "mignon"])).toEqual(["mignon", "spicy"]);
     expect(parseCategories(null)).toEqual([...CATEGORIES]);
     expect(parseCategories([])).toEqual([]);
+  });
+});
+
+describe("contexte vague (mot et nombre)", () => {
+  const all = [
+    ...Q.map((q) => ({ id: q.id, medias: [q.media], contexte: q.contexte })),
+    ...BANK.categories.map((q) => ({ id: q.id, medias: q.medias, contexte: q.contexte })),
+  ];
+  it("toute question jouable en mot a un contexte de mot", () => {
+    for (const q of all.filter((x) => x.medias.includes("mot"))) {
+      expect(CONTEXTES_MOT as readonly string[], q.id).toContain(q.contexte);
+    }
+  });
+  it("toute question jouable en nombre a un contexte chiffré", () => {
+    for (const q of all.filter((x) => x.medias.includes("nombre"))) {
+      expect(CONTEXTES_NOMBRE as readonly string[], q.id).toContain(q.contexte);
+    }
+  });
+  it("montré seulement pour les cases mot et nombre", () => {
+    expect(roundContext("mot", { contexte: "un lieu" })).toBe("un lieu");
+    expect(roundContext("nombre", { contexte: "un âge" })).toBe("un âge");
+    expect(roundContext("dessin", { contexte: "un lieu" })).toBeNull();
+    expect(roundContext("emojis", { contexte: "un lieu" })).toBeNull();
+  });
+  it("le tirage transmet le contexte", () => {
+    const q = drawRoundQuestion(BANK, { media: "nombre", categorie: "mignon", position: 3, usedIds: [] });
+    expect(CONTEXTES_NOMBRE as readonly string[]).toContain(q.contexte);
+  });
+});
+
+describe("image par lien", () => {
+  it("https vers un site public seulement", () => {
+    expect(validateImageUrl("https://exemple.fr/chat.jpg")).toEqual({ ok: true, value: "https://exemple.fr/chat.jpg" });
+    for (const bad of [
+      "http://exemple.fr/chat.jpg",
+      "ftp://exemple.fr/a.png",
+      "https://localhost/a.png",
+      "https://127.0.0.1/a.png",
+      "https://2130706433/a.png",
+      "https://[::1]/a.png",
+      "https://10.0.0.5/a.png",
+      "https://imprimante.local/a.png",
+      "https://metadata.internal/a.png",
+      "https://intranet/a.png",
+      "https://moi:secret@exemple.fr/a.png",
+      "pas un lien",
+      "",
+      42,
+      "https://exemple.fr/" + "a".repeat(2001),
+    ]) {
+      expect(validateImageUrl(bad).ok, String(bad).slice(0, 40)).toBe(false);
+    }
+  });
+  it("types acceptés", () => {
+    expect(isImportedImageType("image/jpeg")).toBe(true);
+    expect(isImportedImageType("image/webp; charset=binary")).toBe(true);
+    expect(isImportedImageType("text/html")).toBe(false);
+    expect(isImportedImageType("image/svg+xml")).toBe(false);
+    expect(isImportedImageType(null)).toBe(false);
+  });
+  it("type réel d'après les premiers octets", () => {
+    expect(sniffImageType(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe("image/jpeg");
+    expect(sniffImageType(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe("image/png");
+    expect(sniffImageType(new TextEncoder().encode("GIF89a"))).toBe("image/gif");
+    expect(sniffImageType(new TextEncoder().encode("RIFF1234WEBPVP8 "))).toBe("image/webp");
+    expect(sniffImageType(new TextEncoder().encode("<html>"))).toBeNull();
+  });
+  it("chemin à part, accepté comme réponse photo seulement", () => {
+    const p = linkedImagePath("salle", "tour");
+    expect(isLinkedImagePath(p)).toBe(true);
+    expect(isLinkedImagePath("salle/tour.jpg")).toBe(false);
+    expect(validateAnswer("photo", p, { roomId: "salle", roundId: "tour" }).ok).toBe(true);
+    expect(validateAnswer("dessin", p, { roomId: "salle", roundId: "tour" }).ok).toBe(false);
+    expect(validateAnswer("photo", linkedImagePath("autre", "tour"), { roomId: "salle", roundId: "tour" }).ok).toBe(false);
   });
 });
