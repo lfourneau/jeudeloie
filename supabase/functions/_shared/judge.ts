@@ -29,6 +29,15 @@ function describeAnswer(media: Media, answer: string | null): string {
   return answer ?? "";
 }
 
+/** Coupe au dernier mot entier sous la limite, avec « … ». */
+function truncate(s: string, max: number): string {
+  const chars = [...s];
+  if (chars.length <= max) return s;
+  const cut = chars.slice(0, max - 1).join("");
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.!?-]+$/, "") + "…";
+}
+
 /** Vérifie et normalise la sortie du modèle. Renvoie null si elle est invalide. */
 export function parseVerdict(text: string): JudgeVerdict | null {
   const match = text.match(/\{[\s\S]*\}/);
@@ -37,7 +46,7 @@ export function parseVerdict(text: string): JudgeVerdict | null {
     const obj = JSON.parse(match[0]);
     if (!isValidScore(obj.score)) return null;
     const commentaire = typeof obj.commentaire === "string" ? obj.commentaire.trim() : "";
-    return { score: obj.score, commentaire: [...commentaire].slice(0, 140).join("") };
+    return { score: obj.score, commentaire: truncate(commentaire, 140) };
   } catch {
     return null;
   }
