@@ -1,6 +1,7 @@
 // Effets « game juice » dans le style carnet : confettis de papier, coups de tampon, cœurs, secousse.
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 import { type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { sfx } from "../lib/juice";
 import { Icon } from "./Icon";
 
@@ -13,10 +14,11 @@ function rand(seed: number) {
 }
 
 /**
- * Salve de morceaux de papier aquarellé et de mini-timbres qui tombent en tournoyant.
- * À placer dans un parent `relative` ; ne capte aucun clic. Supprimée si l'utilisateur réduit les animations.
+ * Salve de morceaux de papier aquarellé et de mini-timbres, lancés depuis le haut de l'écran.
+ * Dessinée dans un calque fixe de la taille de l'écran, qui coupe ce qui dépasse : la page ne s'élargit jamais.
+ * Supprimée si l'utilisateur réduit les animations.
  */
-export function PaperConfetti({ count = 34, spread = 1, origin = "50%" }: { count?: number; spread?: number; origin?: string }) {
+export function PaperConfetti({ count = 34, spread = 1, top = "28%" }: { count?: number; spread?: number; top?: string }) {
   const reduce = useReducedMotion();
   const bits = useMemo(
     () =>
@@ -26,8 +28,8 @@ export function PaperConfetti({ count = 34, spread = 1, origin = "50%" }: { coun
           stamp,
           color: LAVIS[i % LAVIS.length],
           x: (rand(i) - 0.5) * 360 * spread,
-          y: 180 + rand(i + 7) * 260 * spread,
-          up: -(70 + rand(i + 3) * 140) * spread,
+          y: 260 + rand(i + 7) * 320 * spread,
+          up: -(90 + rand(i + 3) * 160) * spread,
           rotate: (rand(i + 11) - 0.5) * 720,
           w: stamp ? 16 : 7 + rand(i + 5) * 9,
           h: stamp ? 19 : 5 + rand(i + 9) * 7,
@@ -37,15 +39,17 @@ export function PaperConfetti({ count = 34, spread = 1, origin = "50%" }: { coun
       }),
     [count, spread],
   );
-  if (reduce) return null;
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-30 h-0">
+  if (reduce || typeof document === "undefined") return null;
+  // Portail dans <body> : un parent penché (transform) casserait le positionnement fixe.
+  return createPortal(
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-30 overflow-hidden">
       {bits.map((b, i) => (
         <motion.span
           key={i}
           className={b.stamp ? "timbre absolute block" : "absolute block"}
           style={{
-            left: origin,
+            left: "50%",
+            top,
             width: b.w,
             height: b.h,
             background: b.stamp ? undefined : b.color,
@@ -54,10 +58,11 @@ export function PaperConfetti({ count = 34, spread = 1, origin = "50%" }: { coun
           }}
           initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
           animate={{ x: b.x, y: [0, b.up, b.y], rotate: b.rotate, opacity: [1, 1, 0] }}
-          transition={{ duration: 1.7, delay: b.delay, ease: [0.2, 0.7, 0.4, 1], times: [0, 0.3, 1] }}
+          transition={{ duration: 1.8, delay: b.delay, ease: [0.2, 0.7, 0.4, 1], times: [0, 0.3, 1] }}
         />
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

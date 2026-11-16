@@ -126,11 +126,18 @@ export function WheelScreen({
       <AnimatePresence mode="wait">
         {stage !== "spin" && stage !== "effect" && (
           <motion.p key="steps" exit={{ scale: 0 }} className="text-center">
-            <StampIn rotate={-3} sound={false}>
-              <span className="font-display text-5xl font-bold text-cachet">
+            {/* Le tampon ne tombe qu'une fois : après une carte d'effet, le texte revient sans rejouer l'impact. */}
+            {stage === "move" ? (
+              <StampIn rotate={-3} sound={false}>
+                <span className="font-display text-5xl font-bold text-cachet">
+                  +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""}
+                </span>
+              </StampIn>
+            ) : (
+              <span className="inline-block rotate-[-3deg] font-display text-5xl font-bold text-cachet">
                 +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""}
               </span>
-            </StampIn>
+            )}
           </motion.p>
         )}
         {stage === "effect" && effect && effectStyle && (
@@ -143,7 +150,8 @@ export function WheelScreen({
           >
             <Sparkles show={good} />
             <Icon name={effectStyle.icon} size={52} className="mx-auto" />
-            <p className="mt-1 font-display text-lg">{effectStyle.label}</p>
+            {/* « Piège » + « Piège ! » ferait doublon : le type n'est rappelé que pour les cartes nommées */}
+            {!effect.label.startsWith(effectStyle.label) && <p className="mt-1 font-display text-lg">{effectStyle.label}</p>}
             <p className="font-display text-2xl font-bold">{effect.label}</p>
             <p className="font-display text-4xl font-bold">{effect.delta > 0 ? `+${effect.delta}` : effect.delta}</p>
           </motion.div>

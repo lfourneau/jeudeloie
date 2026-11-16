@@ -2,6 +2,7 @@ import { normalizeRoomCode } from "@rules";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Icon } from "../components/Icon";
+import { SoundMenu } from "../components/SoundMenu";
 import { Button, Card, ErrorText, Screen } from "../components/ui";
 import { actions } from "../lib/actions";
 
@@ -43,10 +44,13 @@ export function Home({ initialCode, onEnter }: { initialCode: string; onEnter: (
 
   return (
     <Screen>
-      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative pt-10 pb-2 text-center">
-        <div className="timbre absolute top-2 right-1 flex h-16 w-14 rotate-[6deg] items-center justify-center" aria-hidden>
-          <Icon name="coeur" size={30} />
+      <div className="flex items-start justify-between">
+        <SoundMenu align="left" />
+        <div className="timbre flex h-14 w-12 rotate-[6deg] items-center justify-center" aria-hidden>
+          <Icon name="coeur" size={26} />
         </div>
+      </div>
+      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative -mt-2 pb-2 text-center">
         <h1 className="titre text-[38px] leading-tight sm:text-[52px]">Devine la question</h1>
         <p className="mt-3 text-lg text-muted italic">Un carnet de jeu qu'on s'envoie à deux, pour se sentir proches malgré la distance.</p>
       </motion.header>

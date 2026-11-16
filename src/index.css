@@ -29,6 +29,11 @@
 html {
   background: #efe6d6;
 }
+/* Les effets (confettis, tampons) ne doivent jamais élargir la page sur téléphone. */
+html,
+body {
+  overflow-x: clip;
+}
 html,
 body,
 #root {
@@ -141,6 +146,46 @@ button:disabled {
     border-radius: 9999px;
     color: #b5442e;
     box-shadow: inset 0 0 0 3px #fbf6ec, inset 0 0 0 4px rgba(181, 68, 46, 0.55);
+  }
+
+  /* Curseur de volume : rail de papier, pastille d'encre */
+  .curseur {
+    appearance: none;
+    height: 28px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .curseur::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 6px 4px 5px 3px;
+    border: 1.5px solid rgba(31, 47, 74, 0.55);
+    background: #e6be6a;
+  }
+  .curseur::-moz-range-track {
+    height: 6px;
+    border-radius: 6px 4px 5px 3px;
+    border: 1.5px solid rgba(31, 47, 74, 0.55);
+    background: #e6be6a;
+  }
+  .curseur::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -8.5px;
+    border-radius: 9999px;
+    background: #1f2f4a;
+    border: 2px solid #fbf6ec;
+  }
+  .curseur::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #1f2f4a;
+    border: 2px solid #fbf6ec;
+  }
+  .curseur:focus-visible {
+    outline: 2px solid #b5442e;
+    outline-offset: 3px;
   }
 
   /* Bouton pilule irrégulière */

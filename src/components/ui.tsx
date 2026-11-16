@@ -55,6 +55,17 @@ export function Letter({ children, className = "", stamp }: { children: ReactNod
   );
 }
 
+/** Cachet de la poste (rond rouge) qui s'ajuste à son texte, sans jamais déborder. */
+export function Cachet({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={`cachet inline-flex min-h-12 min-w-12 items-center justify-center px-3 py-2 text-center font-display text-base leading-none font-bold whitespace-nowrap ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 /** Petit intitulé manuscrit au-dessus d'un bloc. */
 export function Label({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <p className={`font-display text-[15px] text-muted ${className}`}>{children}</p>;

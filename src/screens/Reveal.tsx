@@ -7,7 +7,7 @@ import { JOKER_INFO, usedJokers } from "../components/Jokers";
 import { HeartBurst, PaperConfetti, StampIn } from "../components/Juice";
 import { buzz, sfx } from "../lib/juice";
 import { Stars } from "../components/Stars";
-import { Button, Card, ErrorText, Label, Letter } from "../components/ui";
+import { Button, Cachet, Card, ErrorText, Label, Letter } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
 
@@ -106,7 +106,7 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
           {usedJokers(round).length > 0 && (
             <p className="text-[15px] text-muted italic">
               Avec {usedJokers(round).length > 1 ? "les jokers" : "le joker"}{" "}
-              {usedJokers(round).map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
+              {usedJokers(round).map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
             </p>
           )}
         </Letter>
@@ -114,15 +114,6 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
 
       <Card tilt={0.3} className="relative flex flex-col gap-3">
         {perfect && <PaperConfetti />}
-        {perfect && (
-          <div className="absolute -top-4 right-3 z-10">
-            <StampIn delay={0.85} rotate={6}>
-              <span className="cachet flex h-16 w-16 items-center justify-center font-display text-lg leading-none font-bold">
-                Parfait !
-              </span>
-            </StampIn>
-          </div>
-        )}
         <p className="titre text-[28px]">Le verdict du mouton</p>
         {manual ? (
           <>
@@ -131,7 +122,14 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
           </>
         ) : (
           <>
-            <Stars score={round.llm_score!} />
+            <div className="flex items-center justify-center gap-3">
+              <Stars score={round.llm_score!} />
+              {perfect && (
+                <StampIn delay={0.85} rotate={6}>
+                  <Cachet>Parfait !</Cachet>
+                </StampIn>
+              )}
+            </div>
             <JudgeSays delay={0.9} mood={round.llm_score === 0 ? "no" : perfect ? "yes" : undefined}>
               {round.llm_comment}
             </JudgeSays>

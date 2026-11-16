@@ -5,7 +5,7 @@ import { AnswerView } from "../components/AnswerView";
 import { Icon } from "../components/Icon";
 import { JOKER_INFO, JokerBar, JokerHints, usedJokers } from "../components/Jokers";
 import { StampIn } from "../components/Juice";
-import { Button, Card, Dots, ErrorText, Label, MEDIA_LABEL } from "../components/ui";
+import { Button, Cachet, Card, Dots, ErrorText, Label, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
 
@@ -44,13 +44,13 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
           <AnswerView round={round} />
         </div>
         <p className="titre text-2xl">
-          {partner.name} cherche la question… <Dots />
+          {partner.name} cherche la question… <Dots />
         </p>
         {used.length > 0 && (
           <div className="mt-5 flex flex-col gap-3">
             <p className="text-[15px] text-muted italic">
               {partner.name} a utilisé {used.length > 1 ? "les jokers" : "le joker"}{" "}
-              {used.map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
+              {used.map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
             </p>
             <JokerHints round={round} />
           </div>
@@ -98,11 +98,9 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
   return (
     <>
       <Card tilt={-0.5} className="relative py-7">
-        <div className="absolute -top-4 -left-2 z-10">
+        <div className="absolute -top-3 left-3 z-10">
           <StampIn delay={0.3} rotate={-6}>
-            <span className="cachet flex h-14 w-14 items-center justify-center font-display text-base leading-none font-bold">
-              À toi !
-            </span>
+            <Cachet>À toi !</Cachet>
           </StampIn>
         </div>
         <p className="titre mb-4 text-center text-2xl">
@@ -118,7 +116,7 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
 
       {choices ? (
         <Card tilt={0.3} className="flex flex-col gap-3">
-          <p className="titre text-[28px]">Laquelle était la question ?</p>
+          <p className="titre text-[28px]">Laquelle était la question ?</p>
           <p className="text-[15px] text-muted italic">La bonne vaut 5 étoiles, une mauvaise 0. Pas de juge cette fois.</p>
           <ul className="flex flex-col gap-2.5">
             {choices.map((c, i) => (
@@ -146,7 +144,7 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
       ) : (
         <Card tilt={0.3} className="flex flex-col gap-3">
           <label htmlFor="guess" className="titre text-[28px]">
-            Quelle était la question ?
+            Quelle était la question ?
           </label>
           <textarea
             id="guess"

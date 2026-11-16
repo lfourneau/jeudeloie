@@ -2,6 +2,7 @@ import { FINISH, MAX_TURNS, PAWNS } from "@rules";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { GameMenu } from "../components/GameMenu";
+import { SoundMenu } from "../components/SoundMenu";
 import { BoardPanel, GameLayout } from "../components/Layout";
 import { Icon } from "../components/Icon";
 import { StampIn } from "../components/Juice";
@@ -63,7 +64,8 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
 
   return (
     <GameLayout showBoard board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-1.5">
+        <SoundMenu />
         <GameMenu onQuit={onQuit} />
       </div>
       <Card tilt={-0.5} className="relative text-center">

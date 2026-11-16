@@ -7,7 +7,7 @@ import { BoardPanel, BoardSheet, GameLayout } from "./components/Layout";
 import { Card, Dots, Screen } from "./components/ui";
 import { actions } from "./lib/actions";
 import { ensureSession, supabaseConfigured } from "./lib/supabase";
-import { setCurrentUserId, useGame } from "./lib/useGame";
+import { type GameData, setCurrentUserId, useGame } from "./lib/useGame";
 import { Answer } from "./screens/Answer";
 import { Appeal } from "./screens/Appeal";
 import { End } from "./screens/End";
@@ -100,10 +100,6 @@ function animatedKey(roomId: string) {
 
 function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onLeave: () => void }) {
   const { data, notMember, onlineSeats } = useGame(roomId);
-  const [animated, setAnimated] = useState<string | null>(() => storage(animatedKey(roomId)));
-  const [animPos, setAnimPos] = useState<number | null>(null);
-  // Plateau masqué pendant la manche pour laisser la place au jeu, affiché à la demande.
-  const [boardOpen, setBoardOpen] = useState(false);
 
   useEffect(() => {
     if (notMember) onLeave();
@@ -118,19 +114,45 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
     await actions.resetGame(roomId);
   }, [roomId]);
 
+  if (!data) return <Loading />;
+  return <GameView data={data} userId={userId} onlineSeats={onlineSeats} onQuit={quit} onReset={reset} />;
+}
+
+/**
+ * Affichage d'une partie à partir de son état : écran de la phase, barre d'état, plateau.
+ * Composant pur (aucun accès réseau) : la page d'aperçu de développement l'utilise avec des données fictives.
+ */
+export function GameView({
+  data,
+  userId,
+  onlineSeats,
+  onQuit,
+  onReset,
+  initialBoardOpen = false,
+}: {
+  data: GameData;
+  userId: string;
+  onlineSeats: number[];
+  onQuit: () => Promise<void>;
+  onReset: () => Promise<void>;
+  initialBoardOpen?: boolean;
+}) {
+  const roomId = data.room.id;
+  const [animated, setAnimated] = useState<string | null>(() => storage(animatedKey(roomId)));
+  const [animPos, setAnimPos] = useState<number | null>(null);
+  // Plateau masqué pendant la manche pour laisser la place au jeu, affiché à la demande.
+  const [boardOpen, setBoardOpen] = useState(initialBoardOpen);
+  const quit = onQuit;
+  const reset = onReset;
+
   // Dernier tour dont la roue a été tirée : on l'anime une fois par appareil.
-  const lastSpun = useMemo(
-    () => (data ? [...data.rounds].reverse().find((r) => r.wheel_result !== null) : undefined),
-    [data],
-  );
+  const lastSpun = useMemo(() => [...data.rounds].reverse().find((r) => r.wheel_result !== null), [data]);
   const markAnimated = useCallback(() => {
     if (!lastSpun) return;
     storage(animatedKey(roomId), lastSpun.id);
     setAnimated(lastSpun.id);
     setAnimPos(null);
   }, [lastSpun, roomId]);
-
-  if (!data) return <Loading />;
 
   const me = data.players.find((p) => p.user_id === userId);
   const partner = data.players.find((p) => p.user_id !== userId);

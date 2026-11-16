@@ -66,14 +66,14 @@ export function JokerBar({
             <>
               <Icon name={info.icon} size={30} />
               <span className="font-display text-[15px] leading-tight font-bold">{info.label}</span>
-              {!left && <span className="text-[12px] italic">déjà utilisé</span>}
+              {!left && <span className="text-[12px] italic text-encre/70">déjà utilisé</span>}
             </>
           );
           const cls = `timbre relative flex min-h-24 w-full flex-col items-center justify-center gap-1 px-1.5 py-2 text-center transition ${
             left ? "" : "text-encre/45"
           }`;
           const cancel = !left && (
-            <span aria-hidden className="pointer-events-none absolute inset-1 flex items-center justify-center">
+            <span aria-hidden className="pointer-events-none absolute -top-2 -right-2 h-9 w-14">
               {justUsed.includes(j) ? (
                 <StampIn rotate={-12} className="h-full w-full">
                   <span className="block h-full w-full">
@@ -81,7 +81,7 @@ export function JokerBar({
                   </span>
                 </StampIn>
               ) : (
-                <span className="block h-full w-full rotate-[-12deg] opacity-80">
+                <span className="block h-full w-full rotate-[-12deg] opacity-85">
                   <Cancel />
                 </span>
               )}

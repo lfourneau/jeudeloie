@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { sfx, useSound } from "../lib/juice";
 import { Icon } from "./Icon";
 import { Dots } from "./ui";
 
@@ -16,7 +15,6 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const [soundOn, setSoundOn] = useSound();
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +60,10 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
         }}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="pilule flex min-h-11 items-center gap-1.5 border-[1.5px] border-encre/60 bg-lettre px-3.5 font-display font-bold"
+        aria-label="Menu de la partie"
+        className="pilule flex min-h-11 min-w-11 items-center justify-center gap-1.5 border-[1.5px] border-encre/60 bg-lettre px-3 font-display font-bold"
       >
-        <Icon name="menu" size={20} /> Partie
+        <Icon name="menu" size={20} /> <span className="hidden sm:inline">Partie</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -103,18 +102,6 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
               </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  role="menuitemcheckbox"
-                  aria-checked={soundOn}
-                  className={item}
-                  onClick={() => {
-                    setSoundOn(!soundOn);
-                    if (!soundOn) window.setTimeout(() => sfx.tick(), 30);
-                  }}
-                >
-                  <Icon name={soundOn ? "son" : "muet"} size={20} /> Son : {soundOn ? "activé" : "coupé"}
-                </button>
                 {onReset && (
                   <button type="button" role="menuitem" className={item} onClick={() => setConfirm("reset")}>
                     <Icon name="recommencer" size={20} /> Recommencer la partie

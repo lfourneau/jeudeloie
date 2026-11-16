@@ -386,3 +386,7 @@ Les indices sont écrits dans le tour (`joker_keyword`, `joker_topic`, `joker_ch
 **Sons** : synthétisés dans le navigateur (`src/lib/juice.ts`, Web Audio, aucun fichier audio). Ils accompagnent ces moments : froissement de papier, tampon, cliquetis, pas, carillon… Une vibration courte s'y ajoute sur téléphone. Le son se coupe dans le menu « Partie », réglage mémorisé par appareil. Avec « réduire les animations », les confettis, secousses et sauts disparaissent.
 
 **Emojis** : le sélecteur propose environ 400 emojis en 9 onglets, avec une recherche par mot français, insensible aux accents (`src/components/emojis.ts`). La limite reste de 3 emojis par réponse. Un test vérifie que chaque emoji proposé est accepté par la règle du serveur.
+
+**Musique d'ambiance** : boîte à musique et nappe douce générées dans le navigateur (quatre accords lents en fa majeur, notes tirées au hasard dans l'accord, léger écho), sans fichier audio ni droits d'auteur. Elle est active par défaut à volume bas, démarre au premier geste du joueur, s'efface quand l'onglet est caché, et baisse brièvement pendant les bruitages forts (tampon, carillon, piège).
+
+**Menu son** : un bouton « son » sur tous les écrans (accueil, barre d'état, salle d'attente, fin). Il ouvre deux réglages, « Musique » et « Bruitages », chacun avec un interrupteur et un volume, mémorisés par appareil (`dlq:audio`). Les vibrations suivent l'interrupteur des bruitages et ne se déclenchent qu'après un premier geste.

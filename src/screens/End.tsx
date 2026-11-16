@@ -7,6 +7,7 @@ import { BoardPanel, GameLayout } from "../components/Layout";
 import { Icon } from "../components/Icon";
 import { PaperConfetti, StampIn } from "../components/Juice";
 import { GameMenu } from "../components/GameMenu";
+import { SoundMenu } from "../components/SoundMenu";
 import { buzz, sfx } from "../lib/juice";
 import { Button, Card, ErrorText, Letter } from "../components/ui";
 import { actions } from "../lib/actions";
@@ -58,7 +59,8 @@ export function End({ data, onQuit }: { data: GameData; onQuit: () => Promise<vo
       showBoard
       board={<BoardPanel position={data.game.position} pawn={data.game.pawn} startName={name(0)} endName={name(1)} />}
     >
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-1.5">
+        <SoundMenu />
         <GameMenu onQuit={onQuit} />
       </div>
       <motion.div
@@ -69,9 +71,9 @@ export function End({ data, onQuit }: { data: GameData; onQuit: () => Promise<vo
       >
         {win && <PaperConfetti count={70} spread={1.5} />}
         <StampIn rotate={-12} delay={0.15} sound={win}>
-          <div className="cachet mx-auto flex h-28 w-28 flex-col items-center justify-center font-display font-bold">
+          <div className="cachet mx-auto flex h-32 w-32 flex-col items-center justify-center font-display font-bold">
             <span className="text-[13px] leading-none">La Poste</span>
-            <span className="text-3xl leading-tight">{win ? "Arrivés !" : "Perdu"}</span>
+            <span className="text-2xl leading-tight whitespace-nowrap">{win ? "Arrivés !" : "Perdu"}</span>
             <span className="text-[13px] leading-none">tour {data.game.turns_counted}</span>
           </div>
         </StampIn>
