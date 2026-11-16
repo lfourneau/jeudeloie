@@ -10,17 +10,19 @@ Ce dépôt contient le **MVP** (étapes 0 à 6 de la spec) : salles avec code à
 
 1. Crée un projet sur [supabase.com](https://supabase.com).
 2. **Authentication → Sign In / Providers → Allow anonymous sign-ins** : active-le.
-3. Installe la CLI (`npm i -g supabase` ou `brew install supabase/tap/supabase`), puis :
+3. La CLI est installée avec le projet (`npx supabase`) :
 
    ```bash
-   supabase login
-   supabase link --project-ref <ref-du-projet>
-   supabase db push                                   # tables, RLS, Realtime, fonctions SQL
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...  # clé du juge, jamais dans le front
-   npm run deploy:functions                           # copie le contenu puis déploie les 10 fonctions
+   npx supabase login
+   npx supabase link --project-ref <ref-du-projet>
+   npx supabase db push                                       # tables, RLS, Realtime, fonctions SQL
+   npx supabase secrets set OPENROUTER_API_KEY=sk-or-...      # clé du juge (ou ANTHROPIC_API_KEY=sk-ant-...)
+   npm run deploy:functions                                   # copie le contenu puis déploie les 10 fonctions
    ```
 
 `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournies automatiquement aux fonctions.
+
+**Juge** : `ANTHROPIC_API_KEY` est utilisée si elle existe, sinon `OPENROUTER_API_KEY` (modèle `anthropic/claude-haiku-5.5`, modifiable avec le secret `OPENROUTER_MODEL`). Sans aucune des deux, chaque tour passe en notation manuelle.
 
 ### 2. Front en local
 
@@ -42,7 +44,7 @@ Ouvre deux navigateurs, ou un onglet normal + un onglet en navigation privée (d
 2. Onglet B : colle le lien (ou tape le code) → « Rejoindre ». Les deux voient 2/2. Un troisième navigateur est refusé.
 3. « Commencer » : A voit la question secrète, B voit « … répond ». Réponds, devine, regarde le verdict, donne un cœur, fais appel une fois, « Continuer » des deux côtés, puis la roue et le pion.
 4. **RLS** : dans l'onglet Réseau du devineur, filtre `round_secrets` → la réponse est `[]` jusqu'à la révélation.
-5. **Repli du juge** : `supabase secrets set ANTHROPIC_API_KEY=invalide` → le tour passe en notation manuelle (chacun note de 0 à 5).
+5. **Repli du juge** : `npx supabase secrets set OPENROUTER_API_KEY=invalide` → le tour passe en notation manuelle (chacun note de 0 à 5).
 
 ## Commandes
 
@@ -74,6 +76,7 @@ content/                questions.json (75 questions), board.json (41 cases)
 | Point | Spec | Choix | Pourquoi |
 | --- | --- | --- | --- |
 | Juge : température | 0 | non envoyée | `claude-haiku-5-5` refuse toute température autre que celle par défaut (erreur 400). Sortie JSON imposée par schéma (`output_config.format`) et effort `low` à la place. |
+| Juge : fournisseur | API Anthropic | Anthropic ou OpenRouter | même modèle Claude Haiku 5.5, au choix selon la clé disponible. |
 | Juge : tokens max | 200 | 1024 | La réflexion adaptative du modèle compte dans `max_tokens` ; 200 risquait de couper la réponse. |
 | `question_id` | dans `rounds` | dans `round_secrets` | `rounds` est lisible par le devineur ; avec le dépôt public, l'id suffirait à retrouver la question. |
 | Colonnes ajoutées | — | `game_state.version`, `rounds.answerer_seat`, `judge_failed`, `appeal_manual`, `wheel_index`, `position_after` | verrou optimiste, animation exacte de la roue et du pion, notation manuelle. |
