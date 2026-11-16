@@ -1,6 +1,7 @@
 import { FINISH, MAX_TURNS, PAWNS } from "@rules";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { CategoryPicker } from "../components/Categories";
 import { GameMenu } from "../components/GameMenu";
 import { SoundMenu } from "../components/SoundMenu";
 import { BoardPanel, GameLayout } from "../components/Layout";
@@ -13,7 +14,17 @@ import { actions } from "../lib/actions";
 import { buzz, sfx } from "../lib/juice";
 import type { GameData } from "../lib/useGame";
 
-export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSeats: number[]; onQuit: () => Promise<void> }) {
+export function Lobby({
+  data,
+  onlineSeats,
+  onQuit,
+  mySeat,
+}: {
+  data: GameData;
+  onlineSeats: number[];
+  onQuit: () => Promise<void>;
+  mySeat: 0 | 1;
+}) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +74,10 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
   const rule = `Atteignez la case ${FINISH} en ${MAX_TURNS} tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question. Trois jokers communs vous aideront en route.`;
 
   return (
-    <GameLayout showBoard board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}>
+    <GameLayout
+      showBoard
+      board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} activeCategories={data.game.categories} />}
+    >
       <div className="flex justify-end gap-1.5">
         <SoundMenu />
         <GameMenu onQuit={onQuit} />
@@ -144,6 +158,16 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
             </motion.button>
           ))}
         </div>
+      </Card>
+
+      <Card tilt={0.3}>
+        <p className="titre mb-1 text-[28px]">Les questions</p>
+        <CategoryPicker
+          roomId={data.room.id}
+          active={data.game.categories ?? []}
+          isHost={mySeat === 0}
+          hostName={name(0)}
+        />
       </Card>
 
       <ErrorText>{error}</ErrorText>

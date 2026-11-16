@@ -35,7 +35,11 @@ export type IconName =
   | "recommencer"
   | "menu"
   | "son"
-  | "muet";
+  | "muet"
+  | "fleur"
+  | "rire"
+  | "piment"
+  | "pensee";
 
 const PATHS: Record<IconName, ReactNode> = {
   // bulle avec deux lignes d'écriture
@@ -214,6 +218,34 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   // trois traits tremblés
+  // fleur à cinq pétales ronds (Mignon)
+  fleur: (
+    <>
+      <path d="M8.9 6.8a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0 -6.2 0ZM13.3 10.0a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0 -6.2 0ZM11.6 15.1a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0 -6.2 0ZM6.2 15.1a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0 -6.2 0ZM4.5 10.0a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0 -6.2 0Z" />
+      <path d="M12 9.6c1 0 1.8.8 1.8 1.8s-.8 1.8-1.8 1.8-1.8-.8-1.8-1.8.8-1.8 1.8-1.8Z" />
+    </>
+  ),
+  // visage qui rit, yeux plissés (Drôle)
+  rire: (
+    <>
+      <path d="M12 3.6c4.8-.1 8.5 3.7 8.4 8.5-.1 4.6-3.8 8.3-8.5 8.3-4.7 0-8.4-3.7-8.4-8.4.1-4.6 3.8-8.3 8.5-8.4Z" />
+      <path d="M7.6 10.2c.6-.8 1.6-.8 2.2 0M14.2 10.2c.6-.8 1.6-.8 2.2 0M7.8 13.4c2.6.5 5.6.5 8.4 0-.4 2.6-2.2 4-4.2 4s-3.8-1.4-4.2-4Z" />
+    </>
+  ),
+  // piment avec sa queue (Spicy)
+  piment: (
+    <>
+      <path d="M15.6 7.2c2.4 1 3.2 3.6 1.8 6.6-1.8 3.8-6.6 6.8-11.6 6.4-.6 0-.6-.7 0-.9 3.6-1.2 6-3.6 7.1-6.8.8-2.4 1.2-4.6 2.7-5.3Z" />
+      <path d="M15.4 7.3c.2-1.6 1.2-2.8 2.8-3.4M14.2 8.4c.6-.9 1.6-1.3 2.6-1.1" />
+    </>
+  ),
+  // bulle de pensée (Profond)
+  pensee: (
+    <>
+      <path d="M7.4 14.6c-2.6-.2-3.6-3.6-1.2-4.8-.3-2.8 3-4.4 5-2.6 1.4-2.4 5.4-2 6 .8 2.8-.2 3.8 3.6 1.2 4.8.4 2.4-2.2 3.8-4 2.6-1.6 1.6-4.4 1.4-5.4-.4-.6 0-1.2 0-1.6-.4Z" />
+      <path d="M6.6 17.4h.1M4.8 19.8h.1" strokeWidth={2.6} />
+    </>
+  ),
   // haut-parleur et ondes
   son: (
     <>

@@ -40,6 +40,8 @@ function round(o: Partial<Round> & { id: string; turn_number: number }): Round {
     joker_keyword: null,
     joker_topic: null,
     joker_choices: null,
+    categorie: "mignon",
+    niveau: null,
     ...o,
   };
 }
@@ -54,6 +56,7 @@ function state(o: Partial<GameState>): GameState {
     position: 12,
     appeal_used: false,
     inventory: [...INITIAL_JOKERS],
+    categories: ["mignon", "drole", "spicy", "profond"],
     current_round_id: "r5",
     outcome: null,
     pawn: "renard",
@@ -120,11 +123,19 @@ type Screen = { data: GameData; user: "u0" | "u1"; boardOpen?: boolean; markAnim
 const SCREENS: Record<string, () => Screen> = {
   "lobby-1": () => ({ data: data(state({ phase: "lobby", current_round_id: null, position: 0 }), [], [P0]), user: "u0" }),
   "lobby-2": () => ({ data: data(state({ phase: "lobby", current_round_id: null, position: 0 }), []), user: "u0" }),
+  "lobby-sans-spicy": () => ({
+    data: data(state({ phase: "lobby", current_round_id: null, position: 0, categories: ["mignon", "drole", "profond"] }), []),
+    user: "u1",
+  }),
+  "answer-spicy": () => ({
+    data: data(state({ position: 44 }), [round({ id: "r5", turn_number: 5, media: "emojis", answer_text: null, categorie: "spicy", niveau: 2 })], undefined, ["r5"]),
+    user: "u0",
+  }),
   "answer-mot": () => ({ data: data(state({}), [answering("mot")], undefined, ["r5"]), user: "u0" }),
   "answer-emojis": () => ({ data: data(state({}), [answering("emojis")], undefined, ["r5"]), user: "u0" }),
   "answer-dessin": () => ({ data: data(state({}), [answering("dessin")], undefined, ["r5"]), user: "u0" }),
   "answer-attente": () => ({ data: data(state({}), [answering("mot")]), user: "u1" }),
-  "guess": () => ({ data: data(state({ phase: "guessing" }), [guessing()]), user: "u1" }),
+  "guess": () => ({ data: data(state({ phase: "guessing" }), [guessing({ categorie: "drole" })]), user: "u1" }),
   "guess-indices": () => ({
     data: data(state({ phase: "guessing", inventory: ["choix"] }), [guessing({ joker_keyword: "week-end", joker_topic: "Nos retrouvailles" })]),
     user: "u1",

@@ -1,4 +1,4 @@
-import type { Media, Phase } from "@rules";
+import type { Category, Media, Phase } from "@rules";
 
 export interface Room {
   id: string;
@@ -24,6 +24,8 @@ export interface GameState {
   appeal_used: boolean;
   /** Jokers encore disponibles, communs aux deux joueurs. */
   inventory: string[];
+  /** Catégories de questions actives, choisies par l'hôte. */
+  categories: Category[];
   current_round_id: string | null;
   outcome: "win" | "lose" | null;
   pawn: string;
@@ -61,6 +63,9 @@ export interface Round {
   joker_keyword: string | null;
   joker_topic: string | null;
   joker_choices: string[] | null;
+  /** Catégorie de la question (null : section générique). */
+  categorie: Category | null;
+  niveau: 1 | 2 | null;
 }
 
 export interface Secret {

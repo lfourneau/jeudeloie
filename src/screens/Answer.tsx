@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { AnswerEditor } from "../components/AnswerEditor";
+import { CategoryBadge } from "../components/Categories";
 import { Icon } from "../components/Icon";
 import { StampIn } from "../components/Juice";
 import { Cachet, Card, Dots, Label, Letter, MEDIA_LABEL } from "../components/ui";
@@ -16,6 +17,11 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
           {partner.name} t'écrit… <Dots />
         </p>
         <p className="mt-2 text-muted italic">Avec {media.label}. Prépare-toi à deviner la question.</p>
+        {round.categorie && (
+          <p className="mt-3">
+            <CategoryBadge categorie={round.categorie} niveau={round.niveau} />
+          </p>
+        )}
       </Card>
     );
   }
@@ -33,6 +39,11 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
           </StampIn>
         </div>
         <Letter stamp={<Icon name={media.icon} size={26} />}>
+          {round.categorie && (
+            <div className="mt-1 leading-none">
+              <CategoryBadge categorie={round.categorie} niveau={round.niveau} />
+            </div>
+          )}
           <Label>Question secrète · réponds avec {media.label}</Label>
           <p className="mt-1 pr-8 font-display text-[26px] leading-[32px] font-bold">{secret ? secret.question_text : <Dots />}</p>
         </Letter>

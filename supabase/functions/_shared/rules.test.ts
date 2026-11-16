@@ -29,6 +29,16 @@ import {
   normalizeRoomCode,
   parseInventory,
   type Question,
+  type QuestionBank,
+  CATEGORIES,
+  categoryForCase,
+  categoryPool,
+  choicePool,
+  drawRoundQuestion,
+  findQuestion,
+  parseCategories,
+  pickCategory,
+  SPICY2_FROM,
   resolveTurn,
   spinWheel,
   validateAnswer,
@@ -39,7 +49,8 @@ import {
 } from "./rules.ts";
 
 const B = board as Board;
-const Q = questions as Question[];
+const BANK = questions as unknown as QuestionBank;
+const Q: Question[] = BANK.generique;
 const fixed = (v: number) => () => v;
 
 describe("contenu", () => {
@@ -374,7 +385,7 @@ describe("jokers", () => {
   });
   it("trois propositions dont la vraie, du même média, toutes différentes", () => {
     for (let k = 0; k < 20; k++) {
-      const c = buildChoices(q, Q, fixed(k / 20));
+      const c = buildChoices(q, Q.filter((x) => x.media === "mot"), fixed(k / 20));
       expect(c).toHaveLength(CHOICE_COUNT);
       expect(c).toContain(q.text);
       expect(new Set(c).size).toBe(CHOICE_COUNT);
@@ -382,12 +393,12 @@ describe("jokers", () => {
     }
   });
   it("les leurres viennent d'un autre thème quand c'est possible", () => {
-    const c = buildChoices(q, Q, Math.random).filter((t) => t !== q.text);
+    const c = buildChoices(q, Q.filter((x) => x.media === "mot"), Math.random).filter((t) => t !== q.text);
     for (const t of c) expect(Q.find((x) => x.text === t)!.topic).not.toBe(q.topic);
   });
   it("la bonne réponse n'est pas toujours à la même place", () => {
     const places = new Set<number>();
-    for (let k = 0; k < 30; k++) places.add(buildChoices(q, Q).indexOf(q.text));
+    for (let k = 0; k < 30; k++) places.add(buildChoices(q, Q.filter((x) => x.media === "mot")).indexOf(q.text));
     expect(places.size).toBeGreaterThan(1);
   });
   it("note du choix : 5 ou 0", () => {
@@ -398,5 +409,133 @@ describe("jokers", () => {
     expect(isValidChoice(0, ["a", "b", "c"])).toBe(true);
     expect(isValidChoice(3, ["a", "b", "c"])).toBe(false);
     expect(isValidChoice("1", ["a", "b", "c"])).toBe(false);
+  });
+});
+
+describe("catégories : banque de questions", () => {
+  const C = BANK.categories;
+  it("100 questions par catégorie, et 100 par niveau de spicy", () => {
+    for (const cat of ["mignon", "drole", "profond"] as const) {
+      expect(C.filter((q) => q.categorie === cat).length, cat).toBeGreaterThanOrEqual(100);
+    }
+    expect(C.filter((q) => q.categorie === "spicy" && q.niveau === 1)).toHaveLength(100);
+    expect(C.filter((q) => q.categorie === "spicy" && q.niveau === 2)).toHaveLength(100);
+  });
+  it("champs valides : niveau seulement pour spicy, médias connus, mot-clé et thème", () => {
+    const medias = ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"];
+    for (const q of C) {
+      expect(CATEGORIES).toContain(q.categorie);
+      if (q.categorie === "spicy") expect([1, 2]).toContain(q.niveau);
+      else expect(q.niveau, q.id).toBeUndefined();
+      expect(q.medias.length, q.id).toBeGreaterThan(0);
+      for (const m of q.medias) expect(medias).toContain(m);
+      expect(q.texte.trim().length).toBeGreaterThan(5);
+      expect(q.keyword.trim().length, q.id).toBeGreaterThan(0);
+      expect(q.topic.trim().length, q.id).toBeGreaterThan(0);
+    }
+  });
+  it("pas de photo pour le spicy", () => {
+    for (const q of C.filter((x) => x.categorie === "spicy")) expect(q.medias, q.id).not.toContain("photo");
+  });
+  it("ids uniques et aucun doublon de texte, y compris avec la section générique", () => {
+    const ids = [...C.map((q) => q.id), ...Q.map((q) => q.id)];
+    expect(new Set(ids).size).toBe(ids.length);
+    const texts = C.map((q) => q.texte);
+    expect(new Set(texts).size).toBe(texts.length);
+    const generic = new Set(Q.map((q) => q.text));
+    for (const t of texts) expect(generic.has(t), t).toBe(false);
+  });
+  it("chaque catégorie a des questions pour presque tous les médias", () => {
+    for (const cat of CATEGORIES) {
+      for (const m of ["mot", "nombre", "emojis", "dessin", "musique", "gif"] as const) {
+        expect(categoryPool(BANK, cat, m, FINISH).length, `${cat}/${m}`).toBeGreaterThanOrEqual(5);
+      }
+    }
+  });
+});
+
+describe("catégories : plateau", () => {
+  const media = B.cases.filter((c) => !["depart", "arrivee", "chance", "malchance", "piege", "tremplin"].includes(c.type));
+  it("chaque case réponse a une catégorie, et seulement elles", () => {
+    for (const c of B.cases) {
+      if (media.includes(c)) expect(CATEGORIES, `${c.index}`).toContain(c.categorie);
+      else expect(c.categorie, `${c.index}`).toBeUndefined();
+    }
+  });
+  it("répartition ≈ 35 % mignon, 30 % drôle, 20 % spicy, 15 % profond", () => {
+    const share = (cat: string) => media.filter((c) => c.categorie === cat).length / media.length;
+    expect(share("mignon")).toBeCloseTo(0.35, 1);
+    expect(share("drole")).toBeCloseTo(0.3, 1);
+    expect(share("spicy")).toBeCloseTo(0.2, 1);
+    expect(share("profond")).toBeCloseTo(0.15, 1);
+  });
+  it("du spicy dans les deux moitiés du plateau", () => {
+    expect(media.some((c) => c.categorie === "spicy" && c.index < SPICY2_FROM)).toBe(true);
+    expect(media.some((c) => c.categorie === "spicy" && c.index >= SPICY2_FROM)).toBe(true);
+  });
+  it("timbre et départ : catégorie de la dernière case réponse", () => {
+    expect(categoryForCase(B, 0)).toBe("mignon");
+    const t = B.cases.find((c) => c.type === "tremplin")!.index;
+    expect(categoryForCase(B, t)).toBe(B.cases[t - 1].categorie ?? categoryForCase(B, t - 1));
+  });
+});
+
+describe("catégories : tirage", () => {
+  const at = (cat: string) => B.cases.find((c) => c.categorie === cat)!.index;
+  it("catégorie active : celle de la case", () => {
+    expect(pickCategory(B, at("drole"), [...CATEGORIES])).toBe("drole");
+  });
+  it("catégorie désactivée : une catégorie active au hasard", () => {
+    const i = at("spicy");
+    for (let k = 0; k < 20; k++) expect(["mignon", "profond"]).toContain(pickCategory(B, i, ["mignon", "profond"], fixed(k / 20)));
+  });
+  it("aucune catégorie active : section générique", () => {
+    expect(pickCategory(B, at("mignon"), [])).toBeNull();
+    const q = drawRoundQuestion(BANK, { media: "mot", categorie: null, position: 5, usedIds: [] });
+    expect(q.categorie).toBeNull();
+    expect(Q.find((x) => x.id === q.id)?.media).toBe("mot");
+  });
+  it("question de la catégorie, compatible avec le média", () => {
+    for (let k = 0; k < 30; k++) {
+      const q = drawRoundQuestion(BANK, { media: "nombre", categorie: "profond", position: 10, usedIds: [] }, fixed(k / 30));
+      expect(q.categorie).toBe("profond");
+      expect(BANK.categories.find((c) => c.id === q.id)!.medias).toContain("nombre");
+    }
+  });
+  it("🌶️🌶️ seulement à partir de la 2e moitié", () => {
+    const before = categoryPool(BANK, "spicy", "mot", SPICY2_FROM - 1);
+    expect(before.every((q) => q.niveau === 1)).toBe(true);
+    const after = categoryPool(BANK, "spicy", "mot", SPICY2_FROM);
+    expect(after.some((q) => q.niveau === 2)).toBe(true);
+    expect(after.some((q) => q.niveau === 1)).toBe(true);
+  });
+  it("jamais une question déjà posée tant qu'il en reste", () => {
+    const used: string[] = [];
+    for (let k = 0; k < 60; k++) {
+      const q = drawRoundQuestion(BANK, { media: "emojis", categorie: "mignon", position: 3, usedIds: used });
+      expect(used).not.toContain(q.id);
+      used.push(q.id);
+    }
+  });
+  it("paquet de la catégorie épuisé pour ce média : section générique non posée", () => {
+    const used = categoryPool(BANK, "spicy", "photo", 10).map((q) => q.id);
+    const q = drawRoundQuestion(BANK, { media: "photo", categorie: "spicy", position: 10, usedIds: used });
+    expect(q.categorie).toBeNull();
+  });
+  it("retrouver une question et ses leurres pour le joker « choix »", () => {
+    const c = BANK.categories.find((x) => x.categorie === "drole" && x.medias.includes("mot"))!;
+    const q = findQuestion(BANK, c.id)!;
+    expect(q).toMatchObject({ text: c.texte, categorie: "drole", keyword: c.keyword });
+    const pool = choicePool(BANK, q, "mot");
+    expect(pool.length).toBeGreaterThan(10);
+    const choices = buildChoices(q, pool);
+    expect(choices).toContain(c.texte);
+    for (const t of choices) expect(BANK.categories.find((x) => x.texte === t)?.categorie).toBe("drole");
+    expect(findQuestion(BANK, "inconnue")).toBeNull();
+  });
+  it("catégories lues en base", () => {
+    expect(parseCategories(["spicy", "x", "mignon"])).toEqual(["mignon", "spicy"]);
+    expect(parseCategories(null)).toEqual([...CATEGORIES]);
+    expect(parseCategories([])).toEqual([]);
   });
 });

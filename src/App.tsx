@@ -158,7 +158,7 @@ export function GameView({
   const partner = data.players.find((p) => p.user_id !== userId);
   if (!me) return <Loading />;
 
-  if (data.game.phase === "lobby") return <Lobby data={data} onlineSeats={onlineSeats} onQuit={quit} />;
+  if (data.game.phase === "lobby") return <Lobby data={data} onlineSeats={onlineSeats} onQuit={quit} mySeat={me.seat} />;
   if (!partner) return <Loading />;
 
   const pendingWheel = lastSpun && lastSpun.id !== animated ? lastSpun : null;
@@ -216,7 +216,14 @@ export function GameView({
   }
 
   const boardPanel = (
-    <BoardPanel position={position} pawn={pawn} turn={turn} startName={seatName(0)} endName={seatName(1)} />
+    <BoardPanel
+      position={position}
+      pawn={pawn}
+      turn={turn}
+      startName={seatName(0)}
+      endName={seatName(1)}
+      activeCategories={data.game.categories}
+    />
   );
   // Entre deux manches (roue + déplacement du pion), le plateau s'affiche toujours.
   const showBoard = boardOpen || !!pendingWheel;

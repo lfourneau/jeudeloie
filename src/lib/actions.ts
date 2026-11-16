@@ -1,5 +1,5 @@
 // Toutes les écritures passent par les Edge Functions : le client n'écrit jamais en base.
-import type { Joker } from "@rules";
+import type { Category, Joker } from "@rules";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { GifMedia, MusicMedia } from "./types";
@@ -44,6 +44,7 @@ export const actions = {
   useJoker: (room_id: string, joker: Joker) => call("use-joker", { room_id, joker }),
   leaveRoom: (room_id: string) => call("leave-room", { room_id }),
   resetGame: (room_id: string) => call("reset-game", { room_id }),
+  setCategories: (room_id: string, categories: Category[]) => call("set-categories", { room_id, categories }),
   react: (room_id: string) => call("react", { room_id }),
   appeal: (room_id: string) => call("appeal", { room_id }),
   submitAppealScore: (room_id: string, score: number) => call("submit-appeal-score", { room_id, score }),

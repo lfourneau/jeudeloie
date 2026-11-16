@@ -21,6 +21,8 @@
   --lavis-ocre: radial-gradient(circle at 32% 28%, #f4dda6 0%, #e6be6a 58%, #d4a443 100%);
   --lavis-rose: radial-gradient(circle at 32% 28%, #f6dcd3 0%, #e8b4a8 58%, #d99686 100%);
   --lavis-sauge: radial-gradient(circle at 32% 28%, #d3e0cc 0%, #a9c0a2 58%, #8aa583 100%);
+  /* Rouge cachet très dilué : réservé à la catégorie Spicy, toujours avec une trame pour le distinguer du rose */
+  --lavis-cachet: radial-gradient(circle at 32% 28%, #f3cdbf 0%, #dd9a86 58%, #c97b66 100%);
   --hachures: repeating-linear-gradient(45deg, rgba(31, 47, 74, 0.13) 0 1px, transparent 1px 7px);
   --points: radial-gradient(rgba(31, 47, 74, 0.2) 1px, transparent 1.6px);
   color-scheme: light;
@@ -76,6 +78,9 @@ button:disabled {
   }
   .lavis-rose {
     background-image: var(--lavis-rose);
+  }
+  .lavis-cachet-hachures {
+    background-image: var(--hachures), var(--lavis-cachet);
   }
   .lavis-sauge {
     background-image: var(--lavis-sauge);

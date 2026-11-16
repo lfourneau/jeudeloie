@@ -6,19 +6,21 @@ import { fromSqlError, HttpError, requireString } from "./http.ts";
 import { giphyEnabled } from "./media.ts";
 import {
   type Board,
-  drawQuestion,
+  drawRoundQuestion,
   finalScore,
   mediaForCase,
   type Media,
   INITIAL_JOKERS,
   type Phase,
   otherSeat,
-  type Question,
+  parseCategories,
+  pickCategory,
+  type QuestionBank,
   resolveTurn,
 } from "./rules.ts";
 
 export const board = boardJson as Board;
-export const questions = questionsJson as Question[];
+export const bank = questionsJson as QuestionBank;
 
 export interface GameState {
   room_id: string;
@@ -32,6 +34,7 @@ export interface GameState {
   current_round_id: string | null;
   outcome: "win" | "lose" | null;
   pawn: string;
+  categories: unknown;
   version: number;
   updated_at: string;
 }
@@ -62,6 +65,8 @@ export interface Round {
   joker_keyword: string | null;
   joker_topic: string | null;
   joker_choices: string[] | null;
+  categorie: string | null;
+  niveau: number | null;
 }
 
 export interface Ctx {
@@ -167,13 +172,17 @@ export async function resetToLobby(ctx: Ctx): Promise<void> {
   await commit(ctx, { resetRounds: true, roomStatus: "lobby", state: LOBBY_STATE });
 }
 
-/** Prépare un nouveau tour : média de la case, question non jouée, secret pour le répondant. */
+/**
+ * Prépare un nouveau tour : média et catégorie de la case, question non jouée, secret pour le répondant.
+ * `categories` : catégories actives de la partie (une catégorie désactivée est remplacée au hasard).
+ */
 export async function prepareRound(
   roomId: string,
   players: PlayerRow[],
   turnNumber: number,
   position: number,
   answererSeat: 0 | 1,
+  categories: unknown,
 ): Promise<Pick<Update, "newRound" | "newSecret"> & { roundId: string }> {
   const { data: used, error } = await adminClient()
     .from("round_secrets")
@@ -187,11 +196,20 @@ export async function prepareRound(
 
   let media = mediaForCase(board, position);
   if (media === "gif" && !giphyEnabled()) media = "emojis"; // GIF non configurés : on ne bloque pas le tour
-  const q = drawQuestion(questions, media, usedIds);
+  const categorie = pickCategory(board, position, parseCategories(categories));
+  const q = drawRoundQuestion(bank, { media, categorie, position, usedIds });
   const roundId = crypto.randomUUID();
   return {
     roundId,
-    newRound: { id: roundId, turn_number: turnNumber, case_index: position, media, answerer_seat: answererSeat },
+    newRound: {
+      id: roundId,
+      turn_number: turnNumber,
+      case_index: position,
+      media,
+      answerer_seat: answererSeat,
+      categorie: q.categorie,
+      niveau: q.niveau,
+    },
     newSecret: {
       round_id: roundId,
       question_id: q.id,
@@ -243,7 +261,7 @@ export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: P
   }
 
   const nextSeat = otherSeat(ctx.state.answerer_seat);
-  const next = await prepareRound(ctx.roomId, ctx.players, ctx.state.turn_number + 1, turn.to, nextSeat);
+  const next = await prepareRound(ctx.roomId, ctx.players, ctx.state.turn_number + 1, turn.to, nextSeat, ctx.state.categories);
   await commit(ctx, {
     roundPatch,
     newRound: next.newRound,

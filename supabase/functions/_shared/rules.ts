@@ -11,6 +11,43 @@ export type CaseType = "depart" | "arrivee" | Media | SpecialCase;
 export interface BoardCase {
   index: number;
   type: CaseType;
+  /** Catégorie des cases réponse (absente sur le départ, l'arrivée et les timbres). */
+  categorie?: Category;
+}
+
+/** Catégories de questions : le sujet de la question, la case donnant le média de la réponse. */
+export type Category = "mignon" | "drole" | "spicy" | "profond";
+export const CATEGORIES: readonly Category[] = ["mignon", "drole", "spicy", "profond"];
+/** Le niveau 🌶️🌶️ (plus osé) n'est tiré qu'à partir de cette case (2e moitié du plateau). */
+export const SPICY2_FROM = 32;
+
+/** Question d'une catégorie : se répond avec l'un des médias listés. */
+export interface CategoryQuestion {
+  id: string;
+  categorie: Category;
+  /** 1 ou 2, seulement pour spicy. */
+  niveau?: 1 | 2;
+  texte: string;
+  medias: Media[];
+  keyword: string;
+  topic: string;
+}
+
+/** Banque complète : section générique (questions écrites pour un média) + questions par catégorie. */
+export interface QuestionBank {
+  generique: Question[];
+  categories: CategoryQuestion[];
+}
+
+/** Question prête à être jouée, quelle que soit sa section. */
+export interface PlayableQuestion {
+  id: string;
+  text: string;
+  theme: string;
+  keyword: string;
+  topic: string;
+  categorie: Category | null;
+  niveau: 1 | 2 | null;
 }
 export interface Board {
   cases: BoardCase[];
@@ -196,6 +233,98 @@ export function applyCaseEffect(
   return { effect, to: Math.max(0, Math.min(FINISH, landed + effect.delta)) };
 }
 
+// ---------- Catégories ----------
+
+export function isCategory(c: unknown): c is Category {
+  return typeof c === "string" && (CATEGORIES as readonly string[]).includes(c);
+}
+
+/** Catégories actives lues en base (jsonb) : seulement des catégories connues, sans doublon, dans l'ordre. */
+export function parseCategories(raw: unknown): Category[] {
+  if (!Array.isArray(raw)) return [...CATEGORIES];
+  return CATEGORIES.filter((c) => raw.includes(c));
+}
+
+/** Catégorie de la case : celle de la case réponse la plus proche en arrière (départ → mignon). */
+export function categoryForCase(board: Board, index: number): Category {
+  for (let i = Math.min(index, board.cases.length - 1); i >= 0; i--) {
+    const c = board.cases[i].categorie;
+    if (c) return c;
+  }
+  return "mignon";
+}
+
+/**
+ * Catégorie jouée ce tour : celle de la case si elle est active, sinon une catégorie active au hasard.
+ * Aucune catégorie active : null (on pioche dans la section générique).
+ */
+export function pickCategory(
+  board: Board,
+  position: number,
+  active: readonly Category[],
+  rng: () => number = Math.random,
+): Category | null {
+  const base = categoryForCase(board, position);
+  if (active.includes(base)) return base;
+  if (active.length === 0) return null;
+  return pick(active, rng);
+}
+
+function fromGeneric(q: Question): PlayableQuestion {
+  return { id: q.id, text: q.text, theme: q.theme, keyword: q.keyword, topic: q.topic, categorie: null, niveau: null };
+}
+
+function fromCategory(q: CategoryQuestion): PlayableQuestion {
+  return {
+    id: q.id,
+    text: q.texte,
+    theme: q.categorie,
+    keyword: q.keyword,
+    topic: q.topic,
+    categorie: q.categorie,
+    niveau: q.categorie === "spicy" ? (q.niveau ?? 1) : null,
+  };
+}
+
+/** Toutes les questions de la banque, pour retrouver une question par son id. */
+export function findQuestion(bank: QuestionBank, id: string): PlayableQuestion | null {
+  const c = bank.categories.find((q) => q.id === id);
+  if (c) return fromCategory(c);
+  const g = bank.generique.find((q) => q.id === id);
+  return g ? fromGeneric(g) : null;
+}
+
+/** Questions de la catégorie qui se répondent avec ce média, au bon niveau de spicy pour cette case. */
+export function categoryPool(bank: QuestionBank, categorie: Category, media: Media, position: number): CategoryQuestion[] {
+  return bank.categories.filter(
+    (q) =>
+      q.categorie === categorie &&
+      q.medias.includes(media) &&
+      (categorie !== "spicy" || (q.niveau ?? 1) === 1 || position >= SPICY2_FROM),
+  );
+}
+
+/**
+ * Question du tour. Ordre de préférence, pour ne jamais reposer une question tant qu'on peut l'éviter :
+ * 1. question non posée de la catégorie, compatible avec le média ;
+ * 2. question non posée de la section générique pour ce média ;
+ * 3. question déjà posée de la catégorie, puis de la section générique (paquets épuisés).
+ */
+export function drawRoundQuestion(
+  bank: QuestionBank,
+  { media, categorie, position, usedIds }: { media: Media; categorie: Category | null; position: number; usedIds: readonly string[] },
+  rng: () => number = Math.random,
+): PlayableQuestion {
+  const pool = categorie ? categoryPool(bank, categorie, media, position) : [];
+  const fresh = pool.filter((q) => !usedIds.includes(q.id));
+  if (fresh.length > 0) return fromCategory(pick(fresh, rng));
+  const generic = bank.generique.filter((q) => q.media === media);
+  const freshGeneric = generic.filter((q) => !usedIds.includes(q.id));
+  if (freshGeneric.length > 0) return fromGeneric(pick(freshGeneric, rng));
+  if (pool.length > 0) return fromCategory(pick(pool, rng));
+  return fromGeneric(drawQuestion(bank.generique, media, usedIds, rng));
+}
+
 // ---------- Questions ----------
 
 /** Tire une question du média, en évitant celles déjà jouées dans la partie. */
@@ -230,20 +359,21 @@ export function parseInventory(raw: unknown): Joker[] {
 }
 
 /**
- * Joker « choix » : la vraie question et deux leurres du même média, mélangés.
+ * Joker « choix » : la vraie question et deux leurres tirés de `pool`, mélangés.
  * Les leurres viennent d'un autre thème quand c'est possible, pour que le choix reste jouable.
  */
 export function buildChoices(
-  question: Question,
-  questions: readonly Question[],
+  question: { id: string; text: string; topic: string },
+  pool: readonly { id: string; text: string; topic: string }[],
   rng: () => number = Math.random,
 ): string[] {
-  const others = questions.filter((q) => q.media === question.media && q.id !== question.id && q.text !== question.text);
+  const others = pool.filter((q) => q.id !== question.id && q.text !== question.text);
   const otherTopic = others.filter((q) => q.topic !== question.topic);
-  const pool = [...(otherTopic.length >= CHOICE_COUNT - 1 ? otherTopic : others)];
+  const candidates = [...(otherTopic.length >= CHOICE_COUNT - 1 ? otherTopic : others)];
   const decoys: string[] = [];
-  while (decoys.length < CHOICE_COUNT - 1 && pool.length > 0) {
-    decoys.push(pool.splice(Math.floor(rng() * pool.length) % pool.length, 1)[0].text);
+  while (decoys.length < CHOICE_COUNT - 1 && candidates.length > 0) {
+    const t = candidates.splice(Math.floor(rng() * candidates.length) % candidates.length, 1)[0].text;
+    if (!decoys.includes(t)) decoys.push(t);
   }
   const all = [question.text, ...decoys];
   for (let i = all.length - 1; i > 0; i--) {
@@ -251,6 +381,20 @@ export function buildChoices(
     [all[i], all[k]] = [all[k], all[i]];
   }
   return all;
+}
+
+/**
+ * Leurres possibles pour le joker « choix » : même catégorie et même média si la question vient d'une
+ * catégorie, sinon même média dans la section générique.
+ */
+export function choicePool(bank: QuestionBank, q: PlayableQuestion, media: Media): { id: string; text: string; topic: string }[] {
+  if (q.categorie) {
+    const cat = q.categorie;
+    return bank.categories
+      .filter((c) => c.categorie === cat && c.medias.includes(media) && (c.niveau ?? 1) <= (q.niveau ?? 1))
+      .map((c) => ({ id: c.id, text: c.texte, topic: c.topic }));
+  }
+  return bank.generique.filter((g) => g.media === media).map((g) => ({ id: g.id, text: g.text, topic: g.topic }));
 }
 
 /** Note du joker « choix » : la bonne proposition vaut 5, une mauvaise 0. Pas de juge. */

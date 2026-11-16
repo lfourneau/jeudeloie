@@ -2,7 +2,7 @@
 
 Jeu web coopératif à deux, en temps réel, pour couples à distance. La spec complète est dans [SPEC.md](SPEC.md).
 
-Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins à l'encre), plateau carré de 63 cases parcouru en spirale (affiché entre deux manches ou à la demande, infobulles au survol), trois jokers communs (mot-clé, thème, trois propositions), quitter / recommencer, style « carnet de correspondance », 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
+Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins à l'encre), plateau carré de 63 cases parcouru en spirale (affiché entre deux manches ou à la demande, infobulles au survol), trois jokers communs (mot-clé, thème, trois propositions), quitter / recommencer, catégories de questions (Mignon, Drôle, Spicy à deux niveaux, Profond) choisies par l'hôte, style « carnet de correspondance », 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
 
 ## Lancer le projet
 
@@ -18,7 +18,7 @@ Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins 
    npx supabase db push --remote                              # tables, RLS, Realtime, fonctions SQL (sans --remote : base locale Docker)
    npx supabase secrets set OPENROUTER_API_KEY=sk-or-...      # clé du juge (ou ANTHROPIC_API_KEY=sk-ant-...)
    npx supabase secrets set GIPHY_API_KEY=...                 # clé gratuite sur developers.giphy.com (cases GIF)
-   npm run deploy:functions                                   # copie le contenu puis déploie les 16 fonctions (répondre « y » à la confirmation)
+   npm run deploy:functions                                   # copie le contenu puis déploie les 17 fonctions (répondre « y » à la confirmation)
    ```
 
 `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournies automatiquement aux fonctions.
@@ -71,7 +71,7 @@ supabase/migrations/    schéma, RLS, publication Realtime, fonctions SQL transa
 supabase/functions/_shared/rules.ts   règles pures, partagées front/serveur, testées
 supabase/functions/_shared/judge.ts   juge LLM (claude-haiku-5-5), réessai, repli manuel
 supabase/functions/<action>/          une Edge Function par action
-content/                questions.json (175 questions, avec mot-clé et thème pour les jokers), board.json (64 cases : 0 à 63)
+content/                questions.json (section générique : 175 questions par média ; catégories : 501 questions), board.json (64 cases : 0 à 63, catégorie des cases réponse)
 ```
 
 ## Écarts à la spec
@@ -96,6 +96,7 @@ content/                questions.json (175 questions, avec mot-clé et thème p
 | Légende | sous le plateau | infobulle au survol (ordinateur) | demande V4 : plus de place pour le jeu. |
 | Plateau | toujours visible | masqué pendant la manche, affiché entre deux manches ou à la demande | demande V4. |
 | Timbres | ~30 %, pas de contrainte d'arrivée | aucun effet ne peut atterrir sur un timbre | sans effet en chaîne, atterrir sur un piège ne faisait rien : le joueur croyait à un bug. |
+| Catégories | thèmes `leger`, `souvenirs`, `futur`, `profond` | 4 catégories avec couleur, dont Spicy à 2 niveaux, et les questions d'origine gardées en section générique de secours | demande V5 ; la case garde son média, la catégorie choisit le sujet. |
 | Quitter | — | « Quitter la partie » pour tous, « Recommencer la partie » pour l'hôte | demande V4. |
 
 **Limite connue** : pendant un appel, la note déjà donnée par l'un est lisible dans l'onglet Réseau de l'autre (elle n'est pas affichée à l'écran). À corriger en V2 en la stockant hors de `rounds`.

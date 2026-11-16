@@ -390,3 +390,33 @@ Les indices sont écrits dans le tour (`joker_keyword`, `joker_topic`, `joker_ch
 **Musique d'ambiance** : boîte à musique et nappe douce générées dans le navigateur (quatre accords lents en fa majeur, notes tirées au hasard dans l'accord, léger écho), sans fichier audio ni droits d'auteur. Elle est active par défaut à volume bas, démarre au premier geste du joueur, s'efface quand l'onglet est caché, et baisse brièvement pendant les bruitages forts (tampon, carillon, piège).
 
 **Menu son** : un bouton « son » sur tous les écrans (accueil, barre d'état, salle d'attente, fin). Il ouvre deux réglages, « Musique » et « Bruitages », chacun avec un interrupteur et un volume, mémorisés par appareil (`dlq:audio`). Les vibrations suivent l'interrupteur des bruitages et ne se déclenchent qu'après un premier geste.
+
+## Évolutions V5 : catégories de questions
+
+**Catégories** : chaque question a un sujet parmi quatre catégories, chacune avec sa couleur (lavis) et son icône au trait.
+
+| Catégorie | Sujet | Couleur |
+| --- | --- | --- |
+| Mignon | tendresse, souvenirs, petits gestes, projets à deux | rose poudré |
+| Drôle | absurde, « tu préfères… » | ocre |
+| Spicy | séduction et complicité, suggestif mais jamais explicite | rouge cachet dilué, à hachures |
+| Profond | la distance, les peurs, les envies, ce qui manque | lavis bleu |
+
+Spicy a deux niveaux : 1 (léger) partout, et 2 (plus osé) seulement à partir de la case 32 (`SPICY2_FROM`), qui s'ajoute alors au niveau 1. Le niveau 2 n'a pas d'interrupteur séparé : il suit la catégorie Spicy.
+
+**Média et catégorie** : chaque case réponse garde son média (comment on répond) et reçoit une catégorie (de quoi parle la question). Chaque question de catégorie liste les médias avec lesquels elle se répond (`medias`). Le spicy ne se répond jamais en photo.
+
+**Banque** (`content/questions.json`) :
+- `generique` : les 175 questions d'origine, écrites pour un média ;
+- `categories` : 100 questions Mignon, 101 Drôle, 100 Spicy niveau 1, 100 Spicy niveau 2 et 100 Profond. Chacune a `id`, `categorie`, `niveau` (spicy seulement), `texte`, `medias`, ainsi que `keyword` et `topic` pour les jokers.
+
+**Tirage** (`drawRoundQuestion`), dans l'ordre :
+1. une question non posée de la catégorie, compatible avec le média ;
+2. sinon une question non posée de la section générique pour ce média ;
+3. sinon une question déjà posée (paquets épuisés).
+
+**Plateau** : les 44 cases réponse ont une catégorie : 15 Mignon, 13 Drôle, 9 Spicy (4 avant la case 32, 5 après), 7 Profond, réparties régulièrement. La case est peinte au lavis de sa catégorie ; l'icône et le libellé indiquent le média. Un timbre ou le départ prend la catégorie de la dernière case réponse.
+
+**Réglages de partie** : en salle d'attente, l'hôte (siège 0) coche les catégories, via la fonction `set-categories` et `game_state.categories`. Il en reste toujours au moins une. Les cases d'une catégorie désactivée piochent dans une catégorie active au hasard ; elles apparaissent pâlies sur le plateau. Le partenaire voit le choix en lecture seule.
+
+**Affichage** : le badge de catégorie (avec un second piment au niveau 2) s'affiche sur la question secrète, chez le devineur et à la révélation. Les colonnes `rounds.categorie` et `rounds.niveau` sont lisibles par les deux joueurs.

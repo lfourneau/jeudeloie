@@ -2,6 +2,7 @@ import { finalScore } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import { type ReactNode, useEffect, useState } from "react";
 import { AnswerView } from "../components/AnswerView";
+import { CategoryBadge } from "../components/Categories";
 import { Icon, Sheep } from "../components/Icon";
 import { JOKER_INFO, usedJokers } from "../components/Jokers";
 import { HeartBurst, PaperConfetti, StampIn } from "../components/Juice";
@@ -95,7 +96,10 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
 
       <motion.div initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
         <Letter>
-          <Label className="text-cachet">La vraie question</Label>
+          <div className="flex flex-wrap items-center gap-x-2">
+            <Label className="text-cachet">La vraie question</Label>
+            <CategoryBadge categorie={round.categorie} niveau={round.niveau} className="!py-0 !text-[13px]" />
+          </div>
           <p className="font-semibold break-words">{secret?.question_text ?? "…"}</p>
         </Letter>
       </motion.div>

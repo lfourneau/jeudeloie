@@ -6,7 +6,7 @@ Deno.serve(handle(async (req, body) => {
   const ctx = await loadContext(req, body);
   requirePhase(ctx, "lobby");
   if (ctx.players.length < 2) throw new HttpError(409, "Il faut être deux pour commencer.");
-  const first = await prepareRound(ctx.roomId, ctx.players, 1, 0, 0);
+  const first = await prepareRound(ctx.roomId, ctx.players, 1, 0, 0, ctx.state.categories);
   await commit(ctx, {
     newRound: first.newRound,
     newSecret: first.newSecret,

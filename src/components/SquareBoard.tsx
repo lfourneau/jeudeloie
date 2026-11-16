@@ -1,8 +1,8 @@
 import boardJson from "@board";
-import { type Board, FINISH } from "@rules";
+import { type Board, type Category, FINISH, SPICY2_FROM } from "@rules";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CASE_STYLE, caseLook, TIMBRE_NOTE } from "./cases";
+import { CASE_STYLE, CATEGORY_STYLE, caseLook, SPICY2_NOTE, TIMBRE_NOTE } from "./cases";
 import { Icon } from "./Icon";
 import { Pawn } from "./Pawn";
 
@@ -71,9 +71,21 @@ function useFinePointer(): boolean {
   return fine;
 }
 
-function CaseTooltip({ index, startName, endName }: { index: number; startName?: string; endName?: string }) {
+function CaseTooltip({
+  index,
+  startName,
+  endName,
+  active,
+}: {
+  index: number;
+  startName?: string;
+  endName?: string;
+  active?: readonly Category[];
+}) {
   const c = board.cases[index];
   const s = CASE_STYLE[c.type];
+  const cat = c.categorie ? CATEGORY_STYLE[c.categorie] : null;
+  const off = !!c.categorie && !!active && !active.includes(c.categorie);
   const p = CELLS[index];
   const name = c.type === "depart" ? startName : c.type === "arrivee" ? endName : undefined;
   // Au-dessus de la case, sauf sur la première ligne ; calée à gauche ou à droite près des bords.
@@ -101,6 +113,13 @@ function CaseTooltip({ index, startName, endName }: { index: number; startName?:
           {name ? ` · chez ${name}` : ""}
         </p>
         <p className="mt-0.5 text-[14px] leading-snug">{s.help}</p>
+        {cat && (
+          <p className="mt-1 text-[14px] leading-snug">
+            <strong className="font-display">Question {cat.label.toLowerCase()}</strong> · {cat.help}
+            {c.categorie === "spicy" && index >= SPICY2_FROM ? ` · ${SPICY2_NOTE.toLowerCase()}` : ""}
+          </p>
+        )}
+        {off && <p className="mt-1 text-[13px] leading-snug text-muted italic">Catégorie désactivée : une autre est tirée au hasard.</p>}
         {s.kind === "timbre" && <p className="mt-1 text-[13px] leading-snug text-muted italic">{TIMBRE_NOTE}</p>}
       </div>
     </motion.div>
@@ -115,12 +134,15 @@ export function SquareBoard({
   startName,
   endName,
   className = "",
+  activeCategories,
 }: {
   position: number;
   pawn: string;
   startName?: string;
   endName?: string;
   className?: string;
+  /** Catégories actives de la partie : les autres apparaissent pâlies. */
+  activeCategories?: readonly Category[];
 }) {
   const reduce = useReducedMotion();
   const fine = useFinePointer();
@@ -190,7 +212,9 @@ export function SquareBoard({
             key={c.index}
             {...hoverProps}
             style={box}
-            className={`${base} ${s.bg} ${look.shape} border-[1.5px] border-encre/55 px-[1.1cqw] py-[0.7cqw]`}
+            className={`${base} ${c.categorie ? CATEGORY_STYLE[c.categorie].bg : s.bg} ${look.shape} border-[1.5px] border-encre/55 px-[1.1cqw] py-[0.7cqw] ${
+              c.categorie && activeCategories && !activeCategories.includes(c.categorie) ? "grayscale-[0.7]" : ""
+            }`}
           >
             <span className="font-display text-[2.6cqw] leading-none font-bold">{c.index}</span>
             <span className="flex flex-1 items-center justify-center">
@@ -204,7 +228,7 @@ export function SquareBoard({
       })}
 
       <AnimatePresence>
-        {fine && hover !== null && <CaseTooltip index={hover} startName={startName} endName={endName} />}
+        {fine && hover !== null && <CaseTooltip index={hover} startName={startName} endName={endName} active={activeCategories} />}
       </AnimatePresence>
 
       {/* Pion, en haut à droite de sa case */}
