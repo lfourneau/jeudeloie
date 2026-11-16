@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { type ReactNode, useState } from "react";
 import { AnswerView } from "../components/AnswerView";
 import { Icon, Sheep } from "../components/Icon";
+import { JOKER_INFO, usedJokers } from "../components/Jokers";
 import { Stars } from "../components/Stars";
 import { Button, Card, ErrorText, Label, Letter } from "../components/ui";
 import { actions } from "../lib/actions";
@@ -67,6 +68,12 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
         <Letter className="!rotate-[0.5deg]">
           <Label>{isAnswerer ? `${partner.name} a deviné` : "Ta devinette"}</Label>
           <p className="font-semibold break-words">{round.guess_text}</p>
+          {usedJokers(round).length > 0 && (
+            <p className="text-[15px] text-muted italic">
+              Avec {usedJokers(round).length > 1 ? "les jokers" : "le joker"}{" "}
+              {usedJokers(round).map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
+            </p>
+          )}
         </Letter>
       </motion.div>
 

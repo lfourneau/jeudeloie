@@ -26,7 +26,14 @@ export type IconName =
   | "galerie"
   | "plume"
   | "enveloppe"
-  | "balance";
+  | "balance"
+  | "cle"
+  | "etiquette"
+  | "cartes"
+  | "plateau"
+  | "sortie"
+  | "recommencer"
+  | "menu";
 
 const PATHS: Record<IconName, ReactNode> = {
   // bulle avec deux lignes d'écriture
@@ -161,6 +168,51 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M5.4 7.4 3 13c1.4 1.4 3.6 1.4 5 0L5.4 7.4ZM18.6 7.4 16 13c1.4 1.4 3.6 1.4 5 0l-2.4-5.6Z" />
     </>
   ),
+  // clé ancienne (joker « mot-clé »)
+  cle: (
+    <>
+      <path d="M8.2 5.4c2.5-.1 4.4 1.8 4.3 4.2-.1 2.3-2 4.1-4.3 4.1-2.4 0-4.2-1.9-4.1-4.2.1-2.3 1.8-4 4.1-4.1Z" />
+      <path d="M12.2 11.4c2.6 2.4 5 4.9 7.4 7.6M16.2 15.6l1.9-1.8M18.2 17.8l1.6-1.5M7.4 8.6c.6-.4 1.3-.4 1.9.1" />
+    </>
+  ),
+  // étiquette à ficelle (joker « thème »)
+  etiquette: (
+    <>
+      <path d="M11.4 4.2c2.9-.1 5.9-.1 8.6.1.2 2.8.2 5.7 0 8.6l-7.4 7.4c-.6.6-1.5.6-2.1 0l-6.6-6.6c-.6-.6-.6-1.5 0-2.1Z" />
+      <path d="M16.3 7.8h.1M16.4 7.8C14.8 5.6 12.2 3.4 9.6 3" />
+    </>
+  ),
+  // trois cartes en éventail (joker « trois propositions »)
+  cartes: (
+    <>
+      <path d="M3.6 8.4 8.2 6.8l3.6 10.6-4.6 1.6Z" />
+      <path d="M9.4 4.6c1.6-.1 3.3-.1 4.9.1.2 3.8.2 7.6 0 11.4-1.6.2-3.3.2-4.9 0" />
+      <path d="M15.6 6.9 20.4 8.3l-3 10.8-4.7-1.4" />
+    </>
+  ),
+  // petit plateau en spirale
+  plateau: (
+    <>
+      <path d="M3.8 4.1c5.5-.4 10.9-.4 16.4 0 .4 5.3.4 10.6 0 15.8-5.5.4-10.9.4-16.4 0-.4-5.2-.4-10.5 0-15.8Z" />
+      <path d="M7.4 16.6V7.6h9.2v8.8h-6.2v-5.6h3.2v2.6" />
+    </>
+  ),
+  // porte entrouverte et flèche
+  sortie: (
+    <>
+      <path d="M13.6 4.2c-2.8-.2-5.6-.2-8.4 0-.3 5.2-.3 10.4 0 15.6 2.8.2 5.6.2 8.4 0" />
+      <path d="M10 12.1c3.3-.1 6.6-.1 10 0M16.8 8.8l3.3 3.3-3.3 3.2" />
+    </>
+  ),
+  // flèche qui revient au départ
+  recommencer: (
+    <>
+      <path d="M5.2 12.4c-.3-4 2.9-7.4 6.9-7.4 3.9 0 7 3.1 6.9 7-.1 3.9-3.2 6.9-7 6.9-2.2 0-4.1-.9-5.4-2.5" />
+      <path d="M2.8 9.6 5.2 12.6l3-2.3" />
+    </>
+  ),
+  // trois traits tremblés
+  menu: <path d="M4.6 7.2c4.9-.3 9.9-.3 14.8 0M4.4 12.1c5-.2 10.1-.2 15.2.1M4.8 16.9c4.8-.3 9.6-.3 14.4 0" />,
 };
 
 export function Icon({

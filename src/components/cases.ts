@@ -2,7 +2,7 @@ import { type CaseType, FINISH, MAX_TURNS } from "@rules";
 import type { IconName } from "./Icon";
 
 /**
- * Apparence de chaque type de case (plateau, mini-plateau, légende).
+ * Apparence de chaque type de case (plateau, infobulles, écran de la roue).
  * Cases réponse = lavis aquarelle ; cases spéciales = timbres ; départ et arrivée = cachets.
  */
 export const CASE_STYLE: Record<
@@ -36,12 +36,8 @@ export const CASE_STYLE: Record<
   tremplin: { kind: "timbre", bg: "timbre", icon: "tremplin", label: "Tremplin", help: "Avance de 2 cases." },
 };
 
-export const LEGEND_GROUPS: { title: string; types: CaseType[] }[] = [
-  { title: "Cases réponse", types: ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"] },
-  { title: "Timbres", types: ["chance", "malchance", "tremplin", "piege"] },
-];
-
-export const LEGEND_NOTE = "Sur un timbre, le tour suivant se joue avec le média de la dernière case réponse.";
+/** Rappel affiché dans l'infobulle des timbres. */
+export const TIMBRE_NOTE = "Le tour suivant se joue avec le média de la dernière case réponse.";
 
 /** Forme irrégulière, rotation et décalage fixes d'une case, déduits de son numéro. */
 export function caseLook(index: number) {

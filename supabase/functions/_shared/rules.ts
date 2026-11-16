@@ -21,6 +21,10 @@ export interface Question {
   media: Media;
   theme: string;
   text: string;
+  /** Joker « mot-clé » : un mot qui met sur la piste. */
+  keyword: string;
+  /** Joker « thème » : le sujet précis de la question. */
+  topic: string;
 }
 
 export type Phase =
@@ -105,6 +109,12 @@ export function validateBoard(board: Board): string[] {
   });
   if (board.cases[0]?.type !== "depart") errors.push("la case 0 doit être le départ");
   if (board.cases[FINISH]?.type !== "arrivee") errors.push(`la case ${FINISH} doit être l'arrivée`);
+  // Pas d'effet en chaîne : un effet qui atterrit sur un timbre ne ferait rien, ce qui semble cassé.
+  board.cases.forEach((c, i) => {
+    for (const t of effectTargets(board, i)) {
+      if (isSpecial(board.cases[t]?.type)) errors.push(`case ${i} (${c.type}) : l'effet peut atterrir sur le timbre ${t}`);
+    }
+  });
   return errors;
 }
 
@@ -114,6 +124,12 @@ export interface CaseEffect {
   type: SpecialCase;
   label: string;
   delta: number;
+}
+
+export const SPECIAL_CASES: readonly SpecialCase[] = ["piege", "tremplin", "chance", "malchance"];
+
+export function isSpecial(t: CaseType | undefined): t is SpecialCase {
+  return t !== undefined && (SPECIAL_CASES as readonly string[]).includes(t);
 }
 
 export const TRAP_DELTA = -3;
@@ -130,6 +146,22 @@ export const MALCHANCE_CARDS: readonly { label: string; delta: number }[] = [
   { label: "Détour imprévu", delta: -2 },
   { label: "Demi-tour !", delta: -3 },
 ];
+
+/** Toutes les cases que l'effet de la case `index` peut atteindre (vide pour une case sans effet). */
+export function effectTargets(board: Board, index: number): number[] {
+  const type = board.cases[index]?.type;
+  const deltas =
+    type === "piege"
+      ? [TRAP_DELTA]
+      : type === "tremplin"
+        ? [SPRINGBOARD_DELTA]
+        : type === "chance"
+          ? CHANCE_CARDS.map((c) => c.delta)
+          : type === "malchance"
+            ? MALCHANCE_CARDS.map((c) => c.delta)
+            : [];
+  return deltas.map((d) => Math.max(0, Math.min(FINISH, index + d)));
+}
 
 function pick<T>(list: readonly T[], rng: () => number): T {
   return list[Math.floor(rng() * list.length) % list.length];
@@ -177,6 +209,57 @@ export function drawQuestion(
   if (pool.length === 0) throw new Error(`aucune question pour le média ${media}`);
   const fresh = pool.filter((q) => !usedIds.includes(q.id));
   return pick(fresh.length > 0 ? fresh : pool, rng); // paquet épuisé : on recycle
+}
+
+// ---------- Jokers ----------
+
+/** Trois jokers communs aux deux joueurs, un de chaque, utilisables une fois par partie par le devineur. */
+export const JOKERS = ["mot_cle", "theme", "choix"] as const;
+export type Joker = (typeof JOKERS)[number];
+export const INITIAL_JOKERS: readonly Joker[] = [...JOKERS];
+export const CHOICE_COUNT = 3;
+
+export function isJoker(j: unknown): j is Joker {
+  return typeof j === "string" && (JOKERS as readonly string[]).includes(j);
+}
+
+/** Inventaire lu en base (jsonb) : on ne garde que les jokers connus, sans doublon. */
+export function parseInventory(raw: unknown): Joker[] {
+  if (!Array.isArray(raw)) return [];
+  return JOKERS.filter((j) => raw.includes(j));
+}
+
+/**
+ * Joker « choix » : la vraie question et deux leurres du même média, mélangés.
+ * Les leurres viennent d'un autre thème quand c'est possible, pour que le choix reste jouable.
+ */
+export function buildChoices(
+  question: Question,
+  questions: readonly Question[],
+  rng: () => number = Math.random,
+): string[] {
+  const others = questions.filter((q) => q.media === question.media && q.id !== question.id && q.text !== question.text);
+  const otherTopic = others.filter((q) => q.topic !== question.topic);
+  const pool = [...(otherTopic.length >= CHOICE_COUNT - 1 ? otherTopic : others)];
+  const decoys: string[] = [];
+  while (decoys.length < CHOICE_COUNT - 1 && pool.length > 0) {
+    decoys.push(pool.splice(Math.floor(rng() * pool.length) % pool.length, 1)[0].text);
+  }
+  const all = [question.text, ...decoys];
+  for (let i = all.length - 1; i > 0; i--) {
+    const k = Math.floor(rng() * (i + 1)) % (i + 1);
+    [all[i], all[k]] = [all[k], all[i]];
+  }
+  return all;
+}
+
+/** Note du joker « choix » : la bonne proposition vaut 5, une mauvaise 0. Pas de juge. */
+export function choiceScore(chosen: string, correct: string): 0 | 5 {
+  return chosen === correct ? 5 : 0;
+}
+
+export function isValidChoice(n: unknown, choices: readonly string[]): n is number {
+  return typeof n === "number" && Number.isInteger(n) && n >= 0 && n < choices.length;
 }
 
 // ---------- Validation des réponses ----------

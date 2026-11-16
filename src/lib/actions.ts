@@ -1,4 +1,5 @@
 // Toutes les écritures passent par les Edge Functions : le client n'écrit jamais en base.
+import type { Joker } from "@rules";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { GifMedia, MusicMedia } from "./types";
@@ -38,6 +39,11 @@ export const actions = {
   startGame: (room_id: string) => call("start-game", { room_id }),
   submitAnswer: (room_id: string, answer: string) => call("submit-answer", { room_id, answer }),
   submitGuess: (room_id: string, guess?: string) => call<{ judged: boolean }>("submit-guess", { room_id, guess }),
+  /** Joker « trois propositions » : envoie l'index de la proposition choisie. */
+  submitChoice: (room_id: string, choice: number) => call<{ judged: boolean }>("submit-guess", { room_id, choice }),
+  useJoker: (room_id: string, joker: Joker) => call("use-joker", { room_id, joker }),
+  leaveRoom: (room_id: string) => call("leave-room", { room_id }),
+  resetGame: (room_id: string) => call("reset-game", { room_id }),
   react: (room_id: string) => call("react", { room_id }),
   appeal: (room_id: string) => call("appeal", { room_id }),
   submitAppealScore: (room_id: string, score: number) => call("submit-appeal-score", { room_id, score }),

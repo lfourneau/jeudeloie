@@ -1,74 +1,54 @@
 import { FINISH, MAX_TURNS } from "@rules";
-import { motion } from "framer-motion";
-import { CASE_STYLE, caseLook } from "./cases";
-import { Pawn } from "./Pawn";
-import { board } from "./SquareBoard";
+import type { ReactNode } from "react";
+import { Icon } from "./Icon";
 
-const AROUND = 4; // cases montrées de part et d'autre du pion
-
-/** Bandeau compact des écrans de jeu (téléphone) : cases autour du pion, tour X/24, partenaire. */
-export function MiniBoard({
+/**
+ * Barre d'état des écrans de jeu : tour X/24, case Y/63, partenaire, bouton pour afficher le plateau
+ * et menu de partie. Le plateau lui-même n'apparaît qu'entre deux manches ou à la demande.
+ */
+export function StatusBar({
   position,
   turn,
-  pawn,
   partnerName,
   partnerOnline,
-  onOpenBoard,
+  boardOpen,
+  onToggleBoard,
+  menu,
 }: {
   position: number;
   turn: number;
-  pawn: string;
   partnerName: string;
   partnerOnline: boolean;
-  onOpenBoard?: () => void;
+  boardOpen: boolean;
+  onToggleBoard: () => void;
+  menu: ReactNode;
 }) {
-  const start = Math.max(0, Math.min(FINISH - AROUND * 2, position - AROUND));
-  const visible = board.cases.slice(start, start + AROUND * 2 + 1);
   const left = FINISH - position;
   return (
-    <div className="feuille px-4 pt-3 pb-2">
-      <div className="mb-2 flex items-center justify-between gap-2 text-[15px]">
-        <span className="font-display font-bold">
-          Tour {Math.min(turn, MAX_TURNS)}/{MAX_TURNS}
-        </span>
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-muted">
+    <div className="feuille flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <p className="font-display text-[17px] font-bold">
+          Tour {Math.min(turn, MAX_TURNS)}/{MAX_TURNS} · case {position}/{FINISH}
+        </p>
+        <p className="flex min-w-0 items-center gap-1.5 truncate text-[14px] text-muted italic">
           <span className={`h-2 w-2 shrink-0 rounded-full ${partnerOnline ? "bg-sauge ring-1 ring-encre/50" : "bg-encre/20"}`} />
-          {partnerName}
-        </span>
-        <span className="font-display font-bold">
-          Case {position}/{FINISH}
-        </span>
+          {partnerName} {partnerOnline ? "est connecté·e" : "est hors ligne"}
+          {left > 0 ? ` · encore ${left} case${left > 1 ? "s" : ""}` : ""}
+        </p>
       </div>
-      <div className="mt-6 flex items-end gap-1">
-        {visible.map((c) => {
-          const s = CASE_STYLE[c.type];
-          const look = caseLook(c.index);
-          const cls = s.kind === "lavis" ? `${s.bg} ${look.shape} border border-encre/55` : s.kind === "timbre" ? "timbre" : "cachet";
-          return (
-            <div key={c.index} className="relative flex-1">
-              {c.index === position && (
-                <motion.div layoutId="mini-pawn" className="absolute -top-6 left-1/2 z-10 -translate-x-1/2">
-                  <Pawn id={pawn} size={26} />
-                </motion.div>
-              )}
-              <div
-                className={`flex aspect-square items-center justify-center font-display text-[13px] font-bold ${cls} ${c.index < position ? "opacity-50" : ""}`}
-                style={{ transform: `rotate(${look.rotate}deg)` }}
-              >
-                {c.index}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <p className="mt-1.5 text-center text-[13px] text-muted italic">
-        {left > 0 ? `Encore ${left} case${left > 1 ? "s" : ""} avant de vous retrouver` : "Vous êtes arrivés !"}
-      </p>
-      {onOpenBoard && (
-        <button onClick={onOpenBoard} className="min-h-11 w-full text-center font-display text-[15px] font-bold text-encre-claire underline decoration-encre/30 underline-offset-4 lg:hidden">
-          Voir le plateau et la légende
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggleBoard}
+          aria-pressed={boardOpen}
+          className={`pilule flex min-h-11 items-center gap-1.5 border-[1.5px] border-encre/60 px-3.5 font-display font-bold ${
+            boardOpen ? "bg-ocre/60" : "bg-lettre"
+          }`}
+        >
+          <Icon name="plateau" size={20} /> {boardOpen ? "Masquer le plateau" : "Plateau"}
         </button>
-      )}
+        {menu}
+      </div>
     </div>
   );
 }

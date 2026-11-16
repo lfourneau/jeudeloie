@@ -7,18 +7,27 @@ import {
   applyCaseEffect,
   bestMoments,
   type Board,
+  buildChoices,
   CHANCE_CARDS,
+  CHOICE_COUNT,
+  choiceScore,
   complicity,
   drawQuestion,
+  effectTargets,
   finalScore,
   FINISH,
   generateRoomCode,
   heartCount,
+  INITIAL_JOKERS,
+  isJoker,
+  isSpecial,
+  isValidChoice,
   isValidPawn,
   MALCHANCE_CARDS,
   MAX_TURNS,
   mediaForCase,
   normalizeRoomCode,
+  parseInventory,
   type Question,
   resolveTurn,
   spinWheel,
@@ -54,6 +63,12 @@ describe("contenu", () => {
     expect(new Set(Q.map((q) => q.id)).size).toBe(Q.length);
     for (const q of Q) expect(["leger", "souvenirs", "futur", "profond"]).toContain(q.theme);
   });
+  it("chaque question a un mot-clé et un thème précis pour les jokers", () => {
+    for (const q of Q) {
+      expect(q.keyword.trim().length, q.id).toBeGreaterThan(0);
+      expect(q.topic.trim().length, q.id).toBeGreaterThan(0);
+    }
+  });
   it("environ 70 % de cases média", () => {
     const inner = B.cases.slice(1, FINISH);
     const media = inner.filter((c) => ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"].includes(c.type));
@@ -73,19 +88,19 @@ describe("mediaForCase", () => {
   it("départ → mot", () => expect(mediaForCase(B, 0)).toBe("mot"));
   it("case média → son média", () => {
     expect(mediaForCase(B, 2)).toBe("emojis");
-    expect(mediaForCase(B, 3)).toBe("nombre");
+    expect(mediaForCase(B, 4)).toBe("nombre");
   });
   it("nouveaux médias", () => {
-    expect(mediaForCase(B, 4)).toBe("dessin");
-    expect(mediaForCase(B, 6)).toBe("gif");
-    expect(mediaForCase(B, 7)).toBe("musique");
-    expect(mediaForCase(B, 8)).toBe("photo");
+    expect(mediaForCase(B, 5)).toBe("dessin");
+    expect(mediaForCase(B, 7)).toBe("gif");
+    expect(mediaForCase(B, 8)).toBe("musique");
+    expect(mediaForCase(B, 9)).toBe("photo");
   });
   it("case spéciale → média de la case média précédente", () => {
-    expect(B.cases[5].type).toBe("tremplin");
-    expect(mediaForCase(B, 5)).toBe("dessin");
-    expect(B.cases[9].type).toBe("chance");
-    expect(mediaForCase(B, 9)).toBe("photo");
+    expect(B.cases[3].type).toBe("tremplin");
+    expect(mediaForCase(B, 3)).toBe("emojis");
+    expect(B.cases[6].type).toBe("chance");
+    expect(mediaForCase(B, 6)).toBe("dessin");
   });
 });
 
@@ -199,6 +214,22 @@ describe("roue", () => {
 });
 
 describe("cases spéciales", () => {
+  it("aucun effet n'atterrit sur un timbre (pas d'effet en chaîne, sinon il ne se passerait rien)", () => {
+    for (const c of B.cases) {
+      for (const t of effectTargets(B, c.index)) expect(isSpecial(B.cases[t].type), `${c.index} → ${t}`).toBe(false);
+    }
+  });
+  it("validateBoard refuse un effet qui atterrit sur un timbre", () => {
+    const bad: Board = { cases: B.cases.map((c) => ({ ...c })) };
+    const i = B.cases.find((c) => c.type === "piege")!.index;
+    bad.cases[i - 3].type = "chance";
+    expect(validateBoard(bad).some((e) => e.includes(`case ${i} (piege)`))).toBe(true);
+  });
+  it("cibles des effets", () => {
+    const trap = B.cases.find((c) => c.type === "piege")!.index;
+    expect(effectTargets(B, trap)).toEqual([trap - 3]);
+    expect(effectTargets(B, 1)).toEqual([]);
+  });
   const at = (type: string) => B.cases.find((c) => c.type === type)!.index;
   it("piège : recule de 3", () => {
     const i = at("piege");
@@ -241,15 +272,24 @@ describe("cases spéciales", () => {
 
 describe("resolveTurn", () => {
   it("avance du résultat de la roue", () => {
-    const r = resolveTurn(B, { position: 10, turnsCounted: 3, finalScore: 5 }, fixed(0));
-    expect(B.cases[13].type).toBe("musique");
-    expect(r).toMatchObject({ level: 3, steps: 3, from: 10, landed: 13, effect: null, to: 13, turnsCounted: 4, outcome: null });
+    const r = resolveTurn(B, { position: 9, turnsCounted: 3, finalScore: 5 }, fixed(0));
+    expect(B.cases[12].type).toBe("dessin");
+    expect(r).toMatchObject({ level: 3, steps: 3, from: 9, landed: 12, effect: null, to: 12, turnsCounted: 4, outcome: null });
   });
   it("applique l'effet de la case d'arrivée", () => {
     const i = B.cases.find((c) => c.type === "piege")!.index;
     const r = resolveTurn(B, { position: i - 1, turnsCounted: 0, finalScore: 0 }, fixed(0)); // roue niveau 0, part 0 = 1
     expect(r).toMatchObject({ landed: i, to: i - 3 });
     expect(r.effect?.type).toBe("piege");
+  });
+  it("chaque piège du plateau fait reculer de 3, sur une case réponse", () => {
+    const traps = B.cases.filter((c) => c.type === "piege").map((c) => c.index);
+    expect(traps.length).toBe(4);
+    for (const i of traps) {
+      const r = resolveTurn(B, { position: i - 1, turnsCounted: 0, finalScore: 0 }, fixed(0));
+      expect(r).toMatchObject({ landed: i, to: i - 3, effect: { type: "piege", delta: -3 } });
+      expect(isSpecial(B.cases[r.to].type)).toBe(false);
+    }
   });
   it("une carte chance peut faire gagner", () => {
     const board: Board = { cases: B.cases.map((c) => ({ ...c })) };
@@ -319,4 +359,44 @@ describe("codes de salle", () => {
     for (let i = 0; i < 50; i++) expect(generateRoomCode()).toMatch(/^[A-Z]{4}$/);
   });
   it("normalisation", () => expect(normalizeRoomCode(" ab-cd9e ")).toBe("ABCD"));
+});
+
+describe("jokers", () => {
+  const q = Q.find((x) => x.media === "mot")!;
+  it("trois jokers au départ", () => {
+    expect(INITIAL_JOKERS).toEqual(["mot_cle", "theme", "choix"]);
+    expect(isJoker("theme")).toBe(true);
+    expect(isJoker("bouclier")).toBe(false);
+  });
+  it("inventaire : jokers connus seulement, sans doublon", () => {
+    expect(parseInventory(["choix", "x", "mot_cle", "choix"])).toEqual(["mot_cle", "choix"]);
+    expect(parseInventory(null)).toEqual([]);
+  });
+  it("trois propositions dont la vraie, du même média, toutes différentes", () => {
+    for (let k = 0; k < 20; k++) {
+      const c = buildChoices(q, Q, fixed(k / 20));
+      expect(c).toHaveLength(CHOICE_COUNT);
+      expect(c).toContain(q.text);
+      expect(new Set(c).size).toBe(CHOICE_COUNT);
+      for (const t of c) expect(Q.find((x) => x.text === t && x.media === "mot")).toBeTruthy();
+    }
+  });
+  it("les leurres viennent d'un autre thème quand c'est possible", () => {
+    const c = buildChoices(q, Q, Math.random).filter((t) => t !== q.text);
+    for (const t of c) expect(Q.find((x) => x.text === t)!.topic).not.toBe(q.topic);
+  });
+  it("la bonne réponse n'est pas toujours à la même place", () => {
+    const places = new Set<number>();
+    for (let k = 0; k < 30; k++) places.add(buildChoices(q, Q).indexOf(q.text));
+    expect(places.size).toBeGreaterThan(1);
+  });
+  it("note du choix : 5 ou 0", () => {
+    expect(choiceScore("a", "a")).toBe(5);
+    expect(choiceScore("b", "a")).toBe(0);
+  });
+  it("index de choix valide", () => {
+    expect(isValidChoice(0, ["a", "b", "c"])).toBe(true);
+    expect(isValidChoice(3, ["a", "b", "c"])).toBe(false);
+    expect(isValidChoice("1", ["a", "b", "c"])).toBe(false);
+  });
 });

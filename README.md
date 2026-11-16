@@ -2,7 +2,7 @@
 
 Jeu web coopératif à deux, en temps réel, pour couples à distance. La spec complète est dans [SPEC.md](SPEC.md).
 
-Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins à l'encre), plateau carré de 63 cases parcouru en spirale avec légende, style « carnet de correspondance », 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
+Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins à l'encre), plateau carré de 63 cases parcouru en spirale (affiché entre deux manches ou à la demande, infobulles au survol), trois jokers communs (mot-clé, thème, trois propositions), quitter / recommencer, style « carnet de correspondance », 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
 
 ## Lancer le projet
 
@@ -15,10 +15,10 @@ Fonctionnalités : salles avec code à 4 lettres, pion commun au choix (dessins 
    ```bash
    npx supabase login
    npx supabase link --project-ref <ref-du-projet>
-   npx supabase db push                                       # tables, RLS, Realtime, fonctions SQL
+   npx supabase db push --remote                              # tables, RLS, Realtime, fonctions SQL (sans --remote : base locale Docker)
    npx supabase secrets set OPENROUTER_API_KEY=sk-or-...      # clé du juge (ou ANTHROPIC_API_KEY=sk-ant-...)
    npx supabase secrets set GIPHY_API_KEY=...                 # clé gratuite sur developers.giphy.com (cases GIF)
-   npm run deploy:functions                                   # copie le contenu puis déploie les 13 fonctions
+   npm run deploy:functions                                   # copie le contenu puis déploie les 16 fonctions (répondre « y » à la confirmation)
    ```
 
 `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournies automatiquement aux fonctions.
@@ -64,14 +64,14 @@ Ouvre deux navigateurs, ou un onglet normal + un onglet en navigation privée (d
 
 ```text
 src/screens/            un fichier par écran (Home, Lobby, Answer, Guess, Judging, Reveal, Appeal, WheelScreen, End)
-src/components/         plateau carré, légende, icônes et pions dessinés, roue, étoiles, éditeurs (texte, emojis, dessin, photo, musique, GIF)
+src/components/         plateau carré (infobulles), barre d'état, menu de partie, jokers, icônes et pions dessinés, roue, étoiles, éditeurs
 src/lib/useGame.ts      lecture de l'état + abonnement Realtime + Presence
 src/lib/actions.ts      appels aux Edge Functions (seul chemin d'écriture)
 supabase/migrations/    schéma, RLS, publication Realtime, fonctions SQL transactionnelles
 supabase/functions/_shared/rules.ts   règles pures, partagées front/serveur, testées
 supabase/functions/_shared/judge.ts   juge LLM (claude-haiku-5-5), réessai, repli manuel
 supabase/functions/<action>/          une Edge Function par action
-content/                questions.json (175 questions), board.json (64 cases : 0 à 63)
+content/                questions.json (175 questions, avec mot-clé et thème pour les jokers), board.json (64 cases : 0 à 63)
 ```
 
 ## Écarts à la spec
@@ -92,5 +92,10 @@ content/                questions.json (175 questions), board.json (64 cases : 0
 | Clics simultanés | 409 | action rejouée automatiquement | deux « Continuer » au même moment ne bloquent plus le tour. |
 | Plateau | 41 cases, 15 tours, serpentin | 63 cases (grille 8 × 8 en spirale), 24 tours | demande V3 : jeu de l'oie traditionnel ; tours augmentés pour garder la même difficulté. |
 | Pion | emoji | dessin à l'encre | le style carnet exclut les emojis de l'interface. |
+| Bonus partagés | Joker, Indice, Bouclier, Roue dorée | Mot-clé, Thème, Trois propositions | demande V4 : trois aides pour le devineur, une de chaque par partie. |
+| Légende | sous le plateau | infobulle au survol (ordinateur) | demande V4 : plus de place pour le jeu. |
+| Plateau | toujours visible | masqué pendant la manche, affiché entre deux manches ou à la demande | demande V4. |
+| Timbres | ~30 %, pas de contrainte d'arrivée | aucun effet ne peut atterrir sur un timbre | sans effet en chaîne, atterrir sur un piège ne faisait rien : le joueur croyait à un bug. |
+| Quitter | — | « Quitter la partie » pour tous, « Recommencer la partie » pour l'hôte | demande V4. |
 
 **Limite connue** : pendant un appel, la note déjà donnée par l'un est lisible dans l'onglet Réseau de l'autre (elle n'est pas affichée à l'écran). À corriger en V2 en la stockant hors de `rounds`.

@@ -345,3 +345,27 @@ Ces choix remplacent les passages correspondants plus haut.
 **Juge** : représenté par un petit mouton à toque. Son commentaire (inchangé côté serveur) s'affiche en entier dans une bulle de hauteur libre.
 
 **Roue** : mêmes probabilités ; les parts de même valeur sont dessinées comme un seul secteur, donc les secteurs ont des tailles inégales.
+
+## Évolutions V4 (retours de jeu)
+
+Ces choix remplacent les passages correspondants plus haut.
+
+**Timbres repositionnés** : il n'y a toujours pas d'effet en chaîne, mais aucun effet ne peut plus atterrir sur un autre timbre (avant, un tremplin ou une carte pouvait arriver sur un piège, et il ne se passait rien). Règle vérifiée par `validateBoard` et les tests : chaque case atteignable par un piège (−3), un tremplin (+2), une carte chance (+1 à +3) ou malchance (−1 à −3) est une case réponse, le départ ou l'arrivée. Mêmes quantités (chance ×5, malchance ×5, piège ×4, tremplin ×4), 3 pièges sur 4 dans la seconde moitié.
+
+**Plateau escamotable** : pendant une manche, le plateau est masqué pour laisser la place au jeu. Il s'affiche entre deux manches (roue et déplacement du pion), en salle d'attente et à l'écran de fin. Le bouton « Plateau » de la barre d'état l'affiche ou le masque à tout moment (à gauche sur ordinateur, en plein écran sur téléphone).
+
+**Légende supprimée** : sur ordinateur, une infobulle décrit la case survolée (numéro, type, effet). Rien sur écran tactile.
+
+**Jokers** : trois jokers communs aux deux joueurs pour toute la partie, un de chaque, distribués au début de la partie (`game_state.inventory`). Seul le devineur peut les utiliser, pendant `guessing`, via la fonction `use-joker`.
+
+| Joker | Effet |
+| --- | --- |
+| Mot-clé | affiche un mot qui met sur la piste (champ `keyword` de la question) |
+| Thème | affiche le sujet précis de la question (champ `topic`, par exemple « Les voyages ») |
+| Trois propositions | remplace le champ de saisie par trois questions du même média, dont la vraie. Bonne proposition = 5, mauvaise = 0, sans appel au juge ; le cœur, l'appel et la roue fonctionnent comme d'habitude |
+
+Les indices sont écrits dans le tour (`joker_keyword`, `joker_topic`, `joker_choices`) et lisibles par les deux joueurs. La bonne proposition n'est jamais stockée dans `rounds` : le serveur la compare à `round_secrets.question_text`.
+
+**Quitter et recommencer** : un menu « Partie » est présent en salle d'attente, pendant la partie et à la fin.
+- « Quitter la partie » (tout le monde) : fonction `leave-room` → fonction SQL `leave_room`. Le joueur est retiré ; celui qui reste devient l'hôte (siège 0) et revient en salle d'attente, et un nouveau partenaire peut rejoindre avec le même code. S'il ne reste personne, la salle est supprimée.
+- « Recommencer la partie » (hôte seulement, siège 0) : fonction `reset-game`, retour en salle d'attente avec les mêmes joueurs, à n'importe quel moment de la partie.

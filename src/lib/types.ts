@@ -22,6 +22,8 @@ export interface GameState {
   answerer_seat: 0 | 1;
   position: number;
   appeal_used: boolean;
+  /** Jokers encore disponibles, communs aux deux joueurs. */
+  inventory: string[];
   current_round_id: string | null;
   outcome: "win" | "lose" | null;
   pawn: string;
@@ -56,6 +58,9 @@ export interface Round {
   position_after: number | null;
   revealed: boolean;
   continue_votes: number[];
+  joker_keyword: string | null;
+  joker_topic: string | null;
+  joker_choices: string[] | null;
 }
 
 export interface Secret {

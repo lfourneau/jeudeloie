@@ -1,6 +1,7 @@
-import { GUESS_MAX_LENGTH, validateGuess } from "@rules";
+import { GUESS_MAX_LENGTH, type Joker, validateGuess } from "@rules";
 import { useState } from "react";
 import { AnswerView } from "../components/AnswerView";
+import { JOKER_INFO, JokerBar, JokerHints, usedJokers } from "../components/Jokers";
 import { Button, Card, Dots, ErrorText, Label, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
@@ -8,9 +9,13 @@ import type { TurnProps } from "./turn";
 export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
   const [guess, setGuess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [jokerBusy, setJokerBusy] = useState<Joker | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const inventory = data.game.inventory ?? [];
+  const choices = round.joker_choices;
 
   if (isAnswerer) {
+    const used = usedJokers(round);
     return (
       <Card tilt={-0.4} className="py-8 text-center">
         <Label>Ta réponse est partie</Label>
@@ -20,9 +25,30 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
         <p className="titre text-2xl">
           {partner.name} cherche la question… <Dots />
         </p>
+        {used.length > 0 && (
+          <div className="mt-5 flex flex-col gap-3">
+            <p className="text-[15px] text-muted italic">
+              {partner.name} a utilisé {used.length > 1 ? "les jokers" : "le joker"}{" "}
+              {used.map((j) => `« ${JOKER_INFO[j].label} »`).join(" et ")}
+            </p>
+            <JokerHints round={round} />
+          </div>
+        )}
       </Card>
     );
   }
+
+  const useJoker = async (j: Joker) => {
+    setJokerBusy(j);
+    setError(null);
+    try {
+      await actions.useJoker(data.room.id, j);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setJokerBusy(null);
+    }
+  };
 
   const submit = async () => {
     const v = validateGuess(guess);
@@ -37,6 +63,17 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
     }
   };
 
+  const choose = async (i: number) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await actions.submitChoice(data.room.id, i);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <Card tilt={-0.5} className="py-7">
@@ -45,28 +82,63 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
         </p>
         <AnswerView round={round} />
       </Card>
-      <Card tilt={0.3} className="flex flex-col gap-3">
-        <label htmlFor="guess" className="titre text-[28px]">
-          Quelle était la question ?
-        </label>
-        <textarea
-          id="guess"
-          autoFocus
-          rows={3}
-          value={guess}
-          maxLength={GUESS_MAX_LENGTH}
-          onChange={(e) => setGuess(e.target.value)}
-          placeholder="Par exemple : ta saison préférée ?"
-          className="champ resize-none px-4 py-3 text-lg"
-        />
-        <p className="text-right text-[13px] text-muted">
-          {guess.length}/{GUESS_MAX_LENGTH}
-        </p>
-        <ErrorText>{error}</ErrorText>
-        <Button onClick={submit} busy={busy} disabled={!guess.trim()}>
-          Envoyer ma devinette
-        </Button>
+
+      <Card tilt={0.2} className="flex flex-col gap-4">
+        <JokerBar inventory={inventory} onUse={choices ? undefined : useJoker} busy={jokerBusy} />
+        <JokerHints round={round} />
       </Card>
+
+      {choices ? (
+        <Card tilt={0.3} className="flex flex-col gap-3">
+          <p className="titre text-[28px]">Laquelle était la question ?</p>
+          <p className="text-[15px] text-muted italic">La bonne vaut 5 étoiles, une mauvaise 0. Pas de juge cette fois.</p>
+          <ul className="flex flex-col gap-2.5">
+            {choices.map((c, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => choose(i)}
+                  className={`feuille w-full px-4 py-3 text-left text-lg transition hover:-translate-y-0.5 hover:bg-lettre disabled:opacity-50`}
+                  style={{ transform: `rotate(${[-0.8, 0.6, -0.4][i]}deg)` }}
+                >
+                  <span className="mr-2 font-display font-bold text-cachet">{["A", "B", "C"][i]}.</span>
+                  {c}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {busy && (
+            <p className="text-center">
+              <Dots />
+            </p>
+          )}
+          <ErrorText>{error}</ErrorText>
+        </Card>
+      ) : (
+        <Card tilt={0.3} className="flex flex-col gap-3">
+          <label htmlFor="guess" className="titre text-[28px]">
+            Quelle était la question ?
+          </label>
+          <textarea
+            id="guess"
+            autoFocus
+            rows={3}
+            value={guess}
+            maxLength={GUESS_MAX_LENGTH}
+            onChange={(e) => setGuess(e.target.value)}
+            placeholder="Par exemple : ta saison préférée ?"
+            className="champ resize-none px-4 py-3 text-lg"
+          />
+          <p className="text-right text-[13px] text-muted">
+            {guess.length}/{GUESS_MAX_LENGTH}
+          </p>
+          <ErrorText>{error}</ErrorText>
+          <Button onClick={submit} busy={busy} disabled={!guess.trim()}>
+            Envoyer ma devinette
+          </Button>
+        </Card>
+      )}
     </>
   );
 }

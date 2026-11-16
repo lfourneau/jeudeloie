@@ -1,8 +1,8 @@
 import { FINISH, MAX_TURNS, PAWNS } from "@rules";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { GameMenu } from "../components/GameMenu";
 import { BoardPanel, GameLayout } from "../components/Layout";
-import { Legend } from "../components/Legend";
 import { Icon } from "../components/Icon";
 import { Pawn, pawnLabel } from "../components/Pawn";
 import { SquareBoard } from "../components/SquareBoard";
@@ -10,7 +10,7 @@ import { Button, Card, ErrorText } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { GameData } from "../lib/useGame";
 
-export function Lobby({ data, onlineSeats, onLeave }: { data: GameData; onlineSeats: number[]; onLeave: () => void }) {
+export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSeats: number[]; onQuit: () => Promise<void> }) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +45,13 @@ export function Lobby({ data, onlineSeats, onLeave }: { data: GameData; onlineSe
   };
 
   const name = (seat: number) => data.players.find((p) => p.seat === seat)?.name;
-  const rule = `Atteignez la case ${FINISH} en ${MAX_TURNS} tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question.`;
+  const rule = `Atteignez la case ${FINISH} en ${MAX_TURNS} tours. À chaque tour, l'un répond à une question secrète, l'autre devine la question. Trois jokers communs vous aideront en route.`;
 
   return (
-    <GameLayout board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}>
+    <GameLayout showBoard board={<BoardPanel position={0} pawn={pawn} startName={name(0)} endName={name(1)} />}>
+      <div className="flex justify-end">
+        <GameMenu onQuit={onQuit} />
+      </div>
       <Card tilt={-0.5} className="relative text-center">
         <div className="cachet absolute -top-3 -right-2 flex h-16 w-16 rotate-[-10deg] items-center justify-center font-display text-[13px] leading-tight font-bold">
           Poste
@@ -115,19 +118,12 @@ export function Lobby({ data, onlineSeats, onLeave }: { data: GameData; onlineSe
         {full ? "Commencer le voyage" : "En attente du 2e joueur"}
       </Button>
 
-      {/* Sur téléphone : règles, plateau et légende sous les commandes */}
+      {/* Sur téléphone : règles et plateau sous les commandes */}
       <Card className="lg:hidden">
         <p className="mb-3 text-muted italic">{rule}</p>
         <SquareBoard position={0} pawn={pawn} startName={name(0)} endName={name(1)} />
       </Card>
-      <Card className="lg:hidden">
-        <p className="titre mb-3 text-[28px]">Légende</p>
-        <Legend />
-      </Card>
       <p className="hidden text-center text-muted italic lg:block">{rule}</p>
-      <Button variant="ghost" onClick={onLeave}>
-        Quitter la salle
-      </Button>
     </GameLayout>
   );
 }

@@ -9,7 +9,7 @@ import { Button, Card, ErrorText, Letter } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { GameData } from "../lib/useGame";
 
-export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) {
+export function End({ data, onQuit }: { data: GameData; onQuit: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const win = data.game.outcome === "win";
@@ -17,6 +17,15 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
   const pct = complicity(played.map((r) => ({ final_score: Number(r.final_score), heart: r.heart })));
   const best = bestMoments(played.map((r) => ({ ...r, final_score: Number(r.final_score) })));
   const hearts = heartCount(played);
+
+  const quit = async () => {
+    setError(null);
+    try {
+      await onQuit();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    }
+  };
 
   const rematch = async () => {
     setBusy(true);
@@ -33,6 +42,7 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
 
   return (
     <GameLayout
+      showBoard
       board={<BoardPanel position={data.game.position} pawn={data.game.pawn} startName={name(0)} endName={name(1)} />}
     >
       <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative pt-6 text-center">
@@ -96,8 +106,8 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
       <Button onClick={rematch} busy={busy}>
         Rejouer une partie
       </Button>
-      <Button variant="ghost" onClick={onLeave}>
-        Quitter
+      <Button variant="ghost" onClick={quit}>
+        Quitter la partie
       </Button>
     </GameLayout>
   );

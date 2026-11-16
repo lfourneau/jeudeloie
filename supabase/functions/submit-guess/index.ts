@@ -3,7 +3,7 @@ import { commit, isAnswerer, loadContext, requireRound } from "../_shared/game.t
 import { adminClient } from "../_shared/auth.ts";
 import { handle, HttpError } from "../_shared/http.ts";
 import { judge } from "../_shared/judge.ts";
-import { validateGuess } from "../_shared/rules.ts";
+import { choiceScore, isValidChoice, validateGuess } from "../_shared/rules.ts";
 
 /** Si la fonction a été coupée pendant judging, le devineur peut relancer le juge après ce délai. */
 const STALE_JUDGING_MS = 45_000;
@@ -12,6 +12,31 @@ Deno.serve(handle(async (req, body) => {
   const ctx = await loadContext(req, body);
   if (isAnswerer(ctx)) throw new HttpError(409, "C'est à ton partenaire de deviner.");
   const round = requireRound(ctx);
+
+  // Joker « trois propositions » : la proposition choisie vaut 5 si c'est la bonne, 0 sinon, sans juge.
+  if (ctx.state.phase === "guessing" && round.joker_choices) {
+    const choices = round.joker_choices;
+    if (!isValidChoice(body.choice, choices)) throw new HttpError(400, "Choisis une des trois propositions.");
+    const chosen = choices[body.choice];
+    const { data: secret, error } = await adminClient()
+      .from("round_secrets").select("question_text").eq("round_id", round.id).single();
+    if (error || !secret) throw new HttpError(500, "Erreur serveur.");
+    const score = choiceScore(chosen, secret.question_text);
+    await commit(ctx, {
+      roundPatch: {
+        id: round.id,
+        guess_text: chosen,
+        llm_score: score,
+        llm_comment: score === 5
+          ? "Bien vu : c'était la bonne proposition !"
+          : "Raté, ce n'était pas celle-là… la prochaine sera la bonne.",
+        originality_bonus: false,
+        revealed: true,
+      },
+      state: { phase: "reveal" },
+    });
+    return { judged: true };
+  }
 
   let guess: string;
   if (ctx.state.phase === "guessing") {

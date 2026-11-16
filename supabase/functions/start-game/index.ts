@@ -1,5 +1,5 @@
-// Crée le premier tour, tire la question, passe en answering.
-import { commit, loadContext, prepareRound, requirePhase } from "../_shared/game.ts";
+// Crée le premier tour, tire la question, distribue les jokers, passe en answering.
+import { commit, freshInventory, loadContext, prepareRound, requirePhase } from "../_shared/game.ts";
 import { handle, HttpError } from "../_shared/http.ts";
 
 Deno.serve(handle(async (req, body) => {
@@ -18,6 +18,7 @@ Deno.serve(handle(async (req, body) => {
       answerer_seat: 0,
       position: 0,
       appeal_used: false,
+      inventory: freshInventory(),
       outcome: null,
       current_round_id: first.roundId,
     },

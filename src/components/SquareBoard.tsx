@@ -1,7 +1,8 @@
 import boardJson from "@board";
 import { type Board, FINISH } from "@rules";
-import { motion, useReducedMotion } from "framer-motion";
-import { CASE_STYLE, caseLook } from "./cases";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { CASE_STYLE, caseLook, TIMBRE_NOTE } from "./cases";
 import { Icon } from "./Icon";
 import { Pawn } from "./Pawn";
 
@@ -55,6 +56,57 @@ const ROAD = CELLS.slice(0, FINISH + 1)
   })
   .join(" ");
 
+// ---------- Infobulle (ordinateur uniquement) ----------
+
+/** Vrai seulement avec une souris : sur écran tactile, un appui ne doit pas ouvrir d'infobulle. */
+function useFinePointer(): boolean {
+  const query = "(hover: hover) and (pointer: fine)";
+  const [fine, setFine] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const on = () => setFine(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return fine;
+}
+
+function CaseTooltip({ index, startName, endName }: { index: number; startName?: string; endName?: string }) {
+  const c = board.cases[index];
+  const s = CASE_STYLE[c.type];
+  const p = CELLS[index];
+  const name = c.type === "depart" ? startName : c.type === "arrivee" ? endName : undefined;
+  // Au-dessus de la case, sauf sur la première ligne ; calée à gauche ou à droite près des bords.
+  const below = p.row === 0;
+  const x = p.col === 0 ? "0%" : p.col === SIDE - 1 ? "-100%" : "-50%";
+  const left = p.col === 0 ? p.col * SLOT : p.col === SIDE - 1 ? (p.col + 1) * SLOT : (p.col + 0.5) * SLOT;
+  return (
+    <motion.div
+      key={index}
+      role="tooltip"
+      initial={{ opacity: 0, y: below ? -4 : 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12 }}
+      className="pointer-events-none absolute z-20 w-56"
+      style={{
+        left: `${left}%`,
+        top: below ? `${(p.row + 1) * SLOT}%` : `${p.row * SLOT}%`,
+        translate: `${x} ${below ? "4px" : "calc(-100% - 4px)"}`,
+      }}
+    >
+      <div className="feuille rotate-[-1deg] px-3.5 py-2.5 text-left">
+        <p className="font-display text-[17px] leading-tight font-bold">
+          {index} · {s.label}
+          {name ? ` · chez ${name}` : ""}
+        </p>
+        <p className="mt-0.5 text-[14px] leading-snug">{s.help}</p>
+        {s.kind === "timbre" && <p className="mt-1 text-[13px] leading-snug text-muted italic">{TIMBRE_NOTE}</p>}
+      </div>
+    </motion.div>
+  );
+}
+
 // ---------- Plateau ----------
 
 export function SquareBoard({
@@ -71,12 +123,15 @@ export function SquareBoard({
   className?: string;
 }) {
   const reduce = useReducedMotion();
+  const fine = useFinePointer();
+  const [hover, setHover] = useState<number | null>(null);
   const at = CELLS[Math.max(0, Math.min(FINISH, position))];
   return (
     <div
       className={`@container relative aspect-square w-full select-none ${className}`}
       role="img"
       aria-label={`Plateau de ${FINISH} cases. Le pion est case ${position}.`}
+      onMouseLeave={() => setHover(null)}
     >
       <svg viewBox={`0 0 ${SIDE} ${SIDE}`} className="absolute inset-0 h-full w-full" aria-hidden>
         <path
@@ -105,11 +160,11 @@ export function SquareBoard({
           transform: `rotate(${look.rotate}deg)`,
           opacity: passed ? 0.5 : 1,
         };
-        const title = `${c.index} · ${s.label}${name ? ` · chez ${name}` : ""}`;
+        const hoverProps = fine ? { onMouseEnter: () => setHover(c.index) } : {};
 
         if (s.kind === "cachet") {
           return (
-            <div key={c.index} title={title} style={box} className={`${base} cachet items-center justify-center text-center`}>
+            <div key={c.index} {...hoverProps} style={box} className={`${base} cachet items-center justify-center text-center`}>
               <Icon name={s.icon} size="3.4cqw" strokeWidth={2} />
               <span className="mt-[0.2cqw] max-w-[92%] truncate font-display text-[1.7cqw] leading-none font-bold">
                 {name ? `chez ${name}` : s.label}
@@ -119,7 +174,7 @@ export function SquareBoard({
         }
         if (s.kind === "timbre") {
           return (
-            <div key={c.index} title={title} style={{ ...box, borderRadius: "2px" }} className={`${base} timbre p-[0.5cqw]`}>
+            <div key={c.index} {...hoverProps} style={{ ...box, borderRadius: "2px" }} className={`${base} timbre p-[0.5cqw]`}>
               <span className="font-display text-[2.4cqw] leading-none font-bold">{c.index}</span>
               <span className="flex flex-1 items-center justify-center">
                 <Icon name={s.icon} size="4cqw" strokeWidth={1.8} />
@@ -133,7 +188,7 @@ export function SquareBoard({
         return (
           <div
             key={c.index}
-            title={title}
+            {...hoverProps}
             style={box}
             className={`${base} ${s.bg} ${look.shape} border-[1.5px] border-encre/55 px-[1.1cqw] py-[0.7cqw]`}
           >
@@ -147,6 +202,10 @@ export function SquareBoard({
           </div>
         );
       })}
+
+      <AnimatePresence>
+        {fine && hover !== null && <CaseTooltip index={hover} startName={startName} endName={endName} />}
+      </AnimatePresence>
 
       {/* Pion, en haut à droite de sa case */}
       <motion.div

@@ -1,9 +1,11 @@
 import { normalizeRoomCode } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MiniBoard } from "./components/Board";
+import { StatusBar } from "./components/Board";
+import { GameMenu } from "./components/GameMenu";
 import { BoardPanel, BoardSheet, GameLayout } from "./components/Layout";
 import { Card, Dots, Screen } from "./components/ui";
+import { actions } from "./lib/actions";
 import { ensureSession, supabaseConfigured } from "./lib/supabase";
 import { setCurrentUserId, useGame } from "./lib/useGame";
 import { Answer } from "./screens/Answer";
@@ -100,11 +102,21 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   const { data, notMember, onlineSeats } = useGame(roomId);
   const [animated, setAnimated] = useState<string | null>(() => storage(animatedKey(roomId)));
   const [animPos, setAnimPos] = useState<number | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // Plateau masqué pendant la manche pour laisser la place au jeu, affiché à la demande.
+  const [boardOpen, setBoardOpen] = useState(false);
 
   useEffect(() => {
     if (notMember) onLeave();
   }, [notMember, onLeave]);
+
+  // Quitter : le serveur retire le joueur (le partenaire revient en salle d'attente), puis on oublie la salle.
+  const quit = useCallback(async () => {
+    await actions.leaveRoom(roomId);
+    onLeave();
+  }, [roomId, onLeave]);
+  const reset = useCallback(async () => {
+    await actions.resetGame(roomId);
+  }, [roomId]);
 
   // Dernier tour dont la roue a été tirée : on l'anime une fois par appareil.
   const lastSpun = useMemo(
@@ -124,11 +136,11 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   const partner = data.players.find((p) => p.user_id !== userId);
   if (!me) return <Loading />;
 
-  if (data.game.phase === "lobby") return <Lobby data={data} onlineSeats={onlineSeats} onLeave={onLeave} />;
+  if (data.game.phase === "lobby") return <Lobby data={data} onlineSeats={onlineSeats} onQuit={quit} />;
   if (!partner) return <Loading />;
 
   const pendingWheel = lastSpun && lastSpun.id !== animated ? lastSpun : null;
-  if (!pendingWheel && data.game.phase === "finished") return <End data={data} onLeave={onLeave} />;
+  if (!pendingWheel && data.game.phase === "finished") return <End data={data} onQuit={quit} />;
 
   const pawn = data.game.pawn;
   const seatName = (seat: number) => data.players.find((p) => p.seat === seat)?.name;
@@ -184,25 +196,20 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   const boardPanel = (
     <BoardPanel position={position} pawn={pawn} turn={turn} startName={seatName(0)} endName={seatName(1)} />
   );
+  // Entre deux manches (roue + déplacement du pion), le plateau s'affiche toujours.
+  const showBoard = boardOpen || !!pendingWheel;
 
   return (
-    <GameLayout board={boardPanel}>
-      <div className="lg:hidden">
-        <MiniBoard
-          position={position}
-          turn={turn}
-          pawn={pawn}
-          partnerName={partner.name}
-          partnerOnline={onlineSeats.includes(partner.seat)}
-          onOpenBoard={() => setSheetOpen(true)}
-        />
-      </div>
-      <div className="hidden items-center justify-end gap-2 text-[15px] text-muted italic lg:flex">
-        <span
-          className={`h-2 w-2 rounded-full ${onlineSeats.includes(partner.seat) ? "bg-sauge ring-1 ring-encre/50" : "bg-encre/20"}`}
-        />
-        {partner.name} {onlineSeats.includes(partner.seat) ? "est connecté·e" : "est hors ligne"}
-      </div>
+    <GameLayout board={boardPanel} showBoard={showBoard}>
+      <StatusBar
+        position={position}
+        turn={turn}
+        partnerName={partner.name}
+        partnerOnline={onlineSeats.includes(partner.seat)}
+        boardOpen={boardOpen}
+        onToggleBoard={() => setBoardOpen((o) => !o)}
+        menu={<GameMenu onQuit={quit} onReset={me.seat === 0 ? reset : undefined} />}
+      />
       <AnimatePresence mode="wait">
         <motion.div
           key={key}
@@ -215,7 +222,8 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
           {content}
         </motion.div>
       </AnimatePresence>
-      <BoardSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
+      {/* Téléphone : pendant la roue, le plateau est déjà dans WheelScreen */}
+      <BoardSheet open={boardOpen} onClose={() => setBoardOpen(false)}>
         {boardPanel}
       </BoardSheet>
     </GameLayout>

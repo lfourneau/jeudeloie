@@ -10,6 +10,7 @@ import {
   finalScore,
   mediaForCase,
   type Media,
+  INITIAL_JOKERS,
   type Phase,
   otherSeat,
   type Question,
@@ -27,6 +28,7 @@ export interface GameState {
   answerer_seat: 0 | 1;
   position: number;
   appeal_used: boolean;
+  inventory: unknown;
   current_round_id: string | null;
   outcome: "win" | "lose" | null;
   pawn: string;
@@ -57,6 +59,9 @@ export interface Round {
   case_effect: unknown;
   continue_votes: number[];
   revealed: boolean;
+  joker_keyword: string | null;
+  joker_topic: string | null;
+  joker_choices: string[] | null;
 }
 
 export interface Ctx {
@@ -129,6 +134,37 @@ export async function commit(ctx: { roomId: string; state: GameState }, u: Updat
   if (error) throw fromSqlError(error);
   ctx.state = { ...ctx.state, ...u.state, version: data as number };
   return data as number;
+}
+
+/** État d'une partie remise en salle d'attente (revanche, réinitialisation par l'hôte). */
+export const LOBBY_STATE: Partial<GameState> = {
+  phase: "lobby",
+  turn_number: 0,
+  turns_counted: 0,
+  answerer_seat: 0,
+  position: 0,
+  appeal_used: false,
+  inventory: [],
+  outcome: null,
+  current_round_id: null,
+};
+
+/** Jokers distribués au début de chaque partie. */
+export function freshInventory(): string[] {
+  return [...INITIAL_JOKERS];
+}
+
+/** Supprime les dessins et photos de la salle (le chemin commence par l'id de la salle). */
+export async function clearRoomFiles(roomId: string): Promise<void> {
+  const bucket = adminClient().storage.from("answers");
+  const { data: files } = await bucket.list(roomId, { limit: 100 });
+  if (files?.length) await bucket.remove(files.map((f) => `${roomId}/${f.name}`));
+}
+
+/** Retour en salle d'attente avec les mêmes joueurs : tours supprimés, pion conservé. */
+export async function resetToLobby(ctx: Ctx): Promise<void> {
+  await clearRoomFiles(ctx.roomId);
+  await commit(ctx, { resetRounds: true, roomStatus: "lobby", state: LOBBY_STATE });
 }
 
 /** Prépare un nouveau tour : média de la case, question non jouée, secret pour le répondant. */
