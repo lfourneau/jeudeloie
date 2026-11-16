@@ -12,10 +12,19 @@
   --color-lilac: #b79bff;
   --color-ink: #f6f0ff;
   --color-muted: #b9a8d6;
+  --color-peach: #ffa36c;
+  --color-teal: #3cc8c8;
+  --color-orchid: #e07be0;
+  --color-lime: #b6e35f;
+  --color-slate: #7d84a8;
+  --color-ember: #e5484d;
   --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
   --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
 }
 
+html {
+  background: var(--color-night);
+}
 html, body, #root {
   min-height: 100%;
 }

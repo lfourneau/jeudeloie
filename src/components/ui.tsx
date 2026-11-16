@@ -52,6 +52,8 @@ export const MEDIA_LABEL: Record<string, { label: string; icon: string; hint: st
   mot: { label: "un mot", icon: "🔤", hint: "Un seul mot, sans espace" },
   nombre: { label: "un nombre", icon: "🔢", hint: "Un nombre entier ou décimal" },
   emojis: { label: "des emojis", icon: "😍", hint: "1 à 3 emojis" },
-  dessin: { label: "un dessin", icon: "🎨", hint: "" },
-  photo: { label: "une photo", icon: "📷", hint: "" },
+  dessin: { label: "un dessin", icon: "🎨", hint: "60 secondes pour dessiner" },
+  photo: { label: "une photo", icon: "📷", hint: "Prends une photo ou choisis-en une" },
+  musique: { label: "une musique", icon: "🎵", hint: "Cherche un morceau" },
+  gif: { label: "un GIF", icon: "🎞️", hint: "Cherche un GIF" },
 };

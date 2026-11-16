@@ -2,7 +2,7 @@
 
 Jeu web coopératif à deux, en temps réel, pour couples à distance. La spec complète est dans [SPEC.md](SPEC.md).
 
-Ce dépôt contient le **MVP** (étapes 0 à 6 de la spec) : salles avec code à 4 lettres, tour complet, juge LLM avec repli manuel, coup de cœur, appel, plateau en serpentin, roue pondérée, médias mot / nombre / emojis, écran de fin et revanche.
+Fonctionnalités : salles avec code à 4 lettres, pion commun au choix, plateau en spirale avec légende, 7 médias (mot, nombre, emojis, dessin, photo, musique, GIF), juge LLM multimodal avec bonus d'originalité et repli manuel, coup de cœur, appel, roue pondérée, cases chance / malchance / piège / tremplin, écran de fin et revanche.
 
 ## Lancer le projet
 
@@ -17,12 +17,15 @@ Ce dépôt contient le **MVP** (étapes 0 à 6 de la spec) : salles avec code à
    npx supabase link --project-ref <ref-du-projet>
    npx supabase db push                                       # tables, RLS, Realtime, fonctions SQL
    npx supabase secrets set OPENROUTER_API_KEY=sk-or-...      # clé du juge (ou ANTHROPIC_API_KEY=sk-ant-...)
-   npm run deploy:functions                                   # copie le contenu puis déploie les 10 fonctions
+   npx supabase secrets set GIPHY_API_KEY=...                 # clé gratuite sur developers.giphy.com (cases GIF)
+   npm run deploy:functions                                   # copie le contenu puis déploie les 13 fonctions
    ```
 
 `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournies automatiquement aux fonctions.
 
 **Juge** : `ANTHROPIC_API_KEY` est utilisée si elle existe, sinon `OPENROUTER_API_KEY` (modèle `anthropic/claude-haiku-5.5`, modifiable avec le secret `OPENROUTER_MODEL`). Sans aucune des deux, chaque tour passe en notation manuelle.
+
+**GIF** : sans `GIPHY_API_KEY`, une case GIF se joue en emojis. **Musique** : Deezer, sans clé.
 
 ### 2. Front en local
 
@@ -61,14 +64,14 @@ Ouvre deux navigateurs, ou un onglet normal + un onglet en navigation privée (d
 
 ```text
 src/screens/            un fichier par écran (Home, Lobby, Answer, Guess, Judging, Reveal, Appeal, WheelScreen, End)
-src/components/         plateau, roue, étoiles, éditeur de réponse (mot, nombre, sélecteur d'emojis)
+src/components/         plateau en spirale, légende, roue, étoiles, éditeurs (texte, emojis, dessin, photo, musique, GIF)
 src/lib/useGame.ts      lecture de l'état + abonnement Realtime + Presence
 src/lib/actions.ts      appels aux Edge Functions (seul chemin d'écriture)
 supabase/migrations/    schéma, RLS, publication Realtime, fonctions SQL transactionnelles
 supabase/functions/_shared/rules.ts   règles pures, partagées front/serveur, testées
 supabase/functions/_shared/judge.ts   juge LLM (claude-haiku-5-5), réessai, repli manuel
 supabase/functions/<action>/          une Edge Function par action
-content/                questions.json (75 questions), board.json (41 cases)
+content/                questions.json (175 questions), board.json (41 cases)
 ```
 
 ## Écarts à la spec
@@ -84,6 +87,8 @@ content/                questions.json (75 questions), board.json (41 cases)
 | Coup de cœur | pendant reveal | reveal ou appeal | sinon un appel lancé avant le cœur l'empêcherait. |
 | Revanche | remise à zéro | retour à la salle d'attente | les deux cliquent « Commencer » quand ils sont prêts. |
 | Juge bloqué | — | bouton « Relancer le juge » après 50 s | si la fonction est coupée pendant `judging`, la partie ne reste pas figée. |
-| Cases spéciales | V2 | affichées, sans effet | le plateau final est déjà en place ; le média suit la règle « case média la plus proche en arrière ». |
+| Cases spéciales | piège, tremplin, coffre, tempête, double tour + bonus | chance, malchance, piège, tremplin | choix V2 : uniquement des effets de déplacement. |
+| Juge | barème strict, texte seul | barème indulgent, bonus d'originalité, voit les images | demande V2. |
+| Clics simultanés | 409 | action rejouée automatiquement | deux « Continuer » au même moment ne bloquent plus le tour. |
 
 **Limite connue** : pendant un appel, la note déjà donnée par l'un est lisible dans l'onglet Réseau de l'autre (elle n'est pas affichée à l'écran). À corriger en V2 en la stockant hors de `rounds`.

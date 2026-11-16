@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Stars } from "../components/Stars";
 import { Button, Card, ErrorText } from "../components/ui";
 import { actions } from "../lib/actions";
-import { AnswerDisplay } from "./Guess";
+import { AnswerView } from "../components/AnswerView";
 import type { TurnProps } from "./turn";
 
 export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnProps) {
@@ -30,7 +30,7 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
   return (
     <>
       <Card className="py-5">
-        <AnswerDisplay text={round.answer_text} media={round.media} />
+        <AnswerView round={round} />
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
@@ -69,9 +69,21 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
             >
               « {round.llm_comment} »
             </motion.p>
+            {round.originality_bonus && (
+              <motion.p
+                initial={{ scale: 0, rotate: -8 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 1.2, type: "spring" }}
+                className="mx-auto mt-3 w-fit rounded-full bg-gold px-3 py-1 text-sm font-bold text-night"
+              >
+                ✨ Originalité +1
+              </motion.p>
+            )}
             <p className="mt-3 text-sm text-muted">
-              Note finale : <strong className="text-ink">{finalScore(round.llm_score!, round.heart)}/5</strong>
-              {round.heart && " (cœur +1)"}
+              Note finale :{" "}
+              <strong className="text-ink">{finalScore(round.llm_score!, round.heart, round.originality_bonus)}/5</strong>
+              {[round.heart && "cœur +1", round.originality_bonus && "originalité +1"].filter(Boolean).length > 0 &&
+                ` (${[round.heart && "cœur +1", round.originality_bonus && "originalité +1"].filter(Boolean).join(", ")})`}
             </p>
           </>
         )}

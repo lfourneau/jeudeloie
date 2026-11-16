@@ -12,6 +12,13 @@ export class HttpError extends Error {
   }
 }
 
+/** Quelqu'un a écrit entre la lecture et l'écriture : l'action peut être rejouée sur l'état à jour. */
+export class ConflictError extends HttpError {
+  constructor() {
+    super(409, "L'état de la partie a changé, réessaie.");
+  }
+}
+
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -21,7 +28,6 @@ export function json(body: unknown, status = 200): Response {
 
 /** Erreurs levées par les fonctions SQL -> statut HTTP + message lisible. */
 const SQL_ERRORS: Record<string, [number, string]> = {
-  conflict: [409, "L'état de la partie a changé, réessaie."],
   room_not_found: [404, "Aucune partie avec ce code."],
   room_full: [409, "Cette partie a déjà deux joueurs."],
   room_not_lobby: [409, "Cette partie a déjà commencé."],
@@ -30,6 +36,7 @@ const SQL_ERRORS: Record<string, [number, string]> = {
 
 export function fromSqlError(err: { message?: string } | null): HttpError {
   const key = err?.message ?? "";
+  if (key === "conflict") return new ConflictError();
   const mapped = SQL_ERRORS[key];
   if (mapped) return new HttpError(mapped[0], mapped[1]);
   console.error("Erreur SQL", err);
@@ -48,8 +55,17 @@ export function handle(fn: (req: Request, body: Record<string, unknown>) => Prom
         const parsed = JSON.parse(text);
         if (parsed && typeof parsed === "object") body = parsed;
       }
-      const result = await fn(req, body);
-      return json(result ?? { ok: true });
+      // Deux clics simultanés (ex. « Continuer » des deux côtés) : l'un perd le verrou de version.
+      // On rejoue alors l'action sur l'état à jour, ce qui la rend correcte au lieu de l'échouer.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          const result = await fn(req, body);
+          return json(result ?? { ok: true });
+        } catch (e) {
+          if (!(e instanceof ConflictError) || attempt >= 3) throw e;
+          await new Promise((r) => setTimeout(r, 40 + Math.random() * 120));
+        }
+      }
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.message }, e.status);
       if (e instanceof SyntaxError) return json({ error: "Requête invalide." }, 400);

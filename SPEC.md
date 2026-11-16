@@ -311,3 +311,21 @@ Lis SPEC.md avant toute modification. N'implémente que l'étape demandée. Ne c
 - Vérifier la RLS en lisant `round_secrets` depuis la console du navigateur du devineur : la requête doit revenir vide.
 - Ne jamais coller la clé Anthropic dans un fichier du front ni dans un fichier commité.
 
+
+## Évolutions V2 (implémentées sur la branche feat/v2)
+
+Ces choix remplacent les passages correspondants plus haut.
+
+**Médias** : les 7 médias sont jouables : mot, nombre, emojis, dessin (canvas 60 s, PNG), photo (appareil ou galerie, JPEG compressé à 1 Mo max), musique (recherche Deezer, le devineur voit la pochette et écoute un extrait de 30 s), GIF (recherche GIPHY). 25 questions par média, soit 175.
+
+**Cases spéciales** : chance (carte qui fait avancer de 1 à 3), malchance (carte qui fait reculer de 1 à 3), piège (−3), tremplin (+2). Coffre, tempête, double tour et les bonus partagés sont abandonnés. L'effet s'applique à l'arrivée du pion, sans effet en chaîne, borné entre 0 et 40 ; une carte chance peut faire gagner.
+
+**Plateau** : 41 cases en spirale façon jeu de l'oie, Départ à l'extérieur, Arrivée au centre. Sur ordinateur, grand plateau et légende à gauche, jeu à droite ; sur téléphone, mini-plateau en haut et plateau + légende en plein écran à la demande.
+
+**Pion** : un pion commun choisi en salle d'attente parmi 12 (🧸🐢🦊🐼🦄🐙🚀🐸🐧🦋🍄🎈), par l'un ou l'autre joueur.
+
+**Juge** : barème plus indulgent (c'est l'idée qui compte ; en cas d'hésitation, la note la plus haute) et bonus d'originalité +1, rare, quand la réponse surprend. Le juge voit les dessins, les photos et l'image fixe des GIF. Sortie JSON : `{"score": 0-5, "originalite": true|false, "commentaire": "..."}`.
+
+**Note finale** = note du juge (ou de l'appel) + 1 si coup de cœur + 1 si originalité, plafonnée à 5.
+
+**Nouvelles fonctions** : `upload-url` (URL d'upload signée, chemin imposé `room_id/round_id.png|jpg`), `search-media` (proxy Deezer / GIPHY, la clé GIPHY reste côté serveur), `set-pawn` (salle d'attente). Le bucket privé `answers` n'est lisible que par les deux joueurs de la salle.

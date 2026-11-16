@@ -4,8 +4,8 @@
 
 // ---------- Types ----------
 
-export type Media = "mot" | "nombre" | "emojis" | "dessin" | "photo";
-export type SpecialCase = "piege" | "tremplin" | "coffre" | "tempete" | "double";
+export type Media = "mot" | "nombre" | "emojis" | "dessin" | "photo" | "musique" | "gif";
+export type SpecialCase = "piege" | "tremplin" | "chance" | "malchance";
 export type CaseType = "depart" | "arrivee" | Media | SpecialCase;
 
 export interface BoardCase {
@@ -43,10 +43,12 @@ export const MAX_TURNS = 15;
 export const GUESS_MAX_LENGTH = 250;
 export const WORD_MAX_LENGTH = 30;
 export const MAX_EMOJIS = 3;
+export const DRAWING_SECONDS = 60;
+export const MAX_UPLOAD_BYTES = 1024 * 1024;
 
-/** Médias jouables dans cette version. Les autres retombent sur « mot ». */
-export const ENABLED_MEDIA: readonly Media[] = ["mot", "nombre", "emojis"];
-const ALL_MEDIA: readonly Media[] = ["mot", "nombre", "emojis", "dessin", "photo"];
+export const ALL_MEDIA: readonly Media[] = ["mot", "nombre", "emojis", "dessin", "photo", "musique", "gif"];
+/** Médias dont la réponse est un fichier envoyé dans le bucket `answers`. */
+export const FILE_MEDIA: readonly Media[] = ["dessin", "photo"];
 
 /** Parts de la roue par niveau (0 à 3). */
 export const WHEEL_SEGMENTS: readonly (readonly number[])[] = [
@@ -55,6 +57,14 @@ export const WHEEL_SEGMENTS: readonly (readonly number[])[] = [
   [2, 3, 3, 4, 4, 5],
   [3, 4, 4, 5, 5, 6],
 ];
+
+/** Pions proposés en salle d'attente (un pion commun aux deux joueurs). */
+export const PAWNS: readonly string[] = ["🧸", "🐢", "🦊", "🐼", "🦄", "🐙", "🚀", "🐸", "🐧", "🦋", "🍄", "🎈"];
+export const DEFAULT_PAWN = PAWNS[0];
+
+export function isValidPawn(p: unknown): p is string {
+  return typeof p === "string" && PAWNS.includes(p);
+}
 
 // ---------- Plateau et médias ----------
 
@@ -65,12 +75,11 @@ export function isMedia(t: CaseType): t is Media {
 /**
  * Média imposé pour un tour dont le pion est sur `index`.
  * Départ → mot. Case spéciale → média de la case média la plus proche en arrière.
- * Média pas encore disponible (dessin, photo) → mot.
  */
 export function mediaForCase(board: Board, index: number): Media {
   for (let i = Math.min(index, board.cases.length - 1); i >= 0; i--) {
     const t = board.cases[i].type;
-    if (isMedia(t)) return ENABLED_MEDIA.includes(t) ? t : "mot";
+    if (isMedia(t)) return t;
   }
   return "mot";
 }
@@ -86,6 +95,62 @@ export function validateBoard(board: Board): string[] {
   return errors;
 }
 
+// ---------- Cases spéciales ----------
+
+export interface CaseEffect {
+  type: SpecialCase;
+  label: string;
+  delta: number;
+}
+
+export const TRAP_DELTA = -3;
+export const SPRINGBOARD_DELTA = 2;
+
+export const CHANCE_CARDS: readonly { label: string; delta: number }[] = [
+  { label: "Petit pas en avant", delta: 1 },
+  { label: "Vent favorable", delta: 2 },
+  { label: "Raccourci secret", delta: 3 },
+];
+
+export const MALCHANCE_CARDS: readonly { label: string; delta: number }[] = [
+  { label: "Lacet défait", delta: -1 },
+  { label: "Détour imprévu", delta: -2 },
+  { label: "Demi-tour !", delta: -3 },
+];
+
+function pick<T>(list: readonly T[], rng: () => number): T {
+  return list[Math.floor(rng() * list.length) % list.length];
+}
+
+/**
+ * Effet de la case où le pion vient d'arriver. Pas d'effet en chaîne :
+ * la case atteinte après l'effet ne déclenche rien.
+ */
+export function applyCaseEffect(
+  board: Board,
+  landed: number,
+  rng: () => number = Math.random,
+): { effect: CaseEffect | null; to: number } {
+  const type = board.cases[landed]?.type;
+  let effect: CaseEffect | null = null;
+  switch (type) {
+    case "piege":
+      effect = { type, label: "Piège !", delta: TRAP_DELTA };
+      break;
+    case "tremplin":
+      effect = { type, label: "Tremplin !", delta: SPRINGBOARD_DELTA };
+      break;
+    case "chance":
+      effect = { type, ...pick(CHANCE_CARDS, rng) };
+      break;
+    case "malchance":
+      effect = { type, ...pick(MALCHANCE_CARDS, rng) };
+      break;
+  }
+  if (!effect) return { effect: null, to: landed };
+  return { effect, to: Math.max(0, Math.min(FINISH, landed + effect.delta)) };
+}
+
 // ---------- Questions ----------
 
 /** Tire une question du média, en évitant celles déjà jouées dans la partie. */
@@ -98,8 +163,7 @@ export function drawQuestion(
   const pool = questions.filter((q) => q.media === media);
   if (pool.length === 0) throw new Error(`aucune question pour le média ${media}`);
   const fresh = pool.filter((q) => !usedIds.includes(q.id));
-  const from = fresh.length > 0 ? fresh : pool; // paquet épuisé : on recycle
-  return from[Math.floor(rng() * from.length) % from.length];
+  return pick(fresh.length > 0 ? fresh : pool, rng); // paquet épuisé : on recycle
 }
 
 // ---------- Validation des réponses ----------
@@ -120,15 +184,26 @@ export function isEmojiGrapheme(g: string): boolean {
   return PICTO.test(g);
 }
 
-export function validateAnswer(media: Media, raw: unknown): ValidationResult {
+/** Chemin attendu d'un fichier de réponse dans le bucket `answers`. */
+export function answerFilePath(roomId: string, roundId: string, media: Media): string {
+  return `${roomId}/${roundId}.${media === "photo" ? "jpg" : "png"}`;
+}
+
+/**
+ * Valide la réponse brute envoyée par le client.
+ * Pour dessin/photo, `ctx` donne la salle et le tour : seul le chemin attendu est accepté.
+ */
+export function validateAnswer(
+  media: Media,
+  raw: unknown,
+  ctx?: { roomId: string; roundId: string },
+): ValidationResult {
   if (typeof raw !== "string") return { ok: false, error: "Réponse manquante." };
   const s = raw.trim();
   if (!s) return { ok: false, error: "La réponse est vide." };
 
   switch (media) {
-    case "mot":
-    case "dessin": // en attendant la V2, ces cases se jouent comme des mots
-    case "photo": {
+    case "mot": {
       if (/\s/.test(s)) return { ok: false, error: "Un seul mot, sans espace." };
       if ([...s].length > WORD_MAX_LENGTH) return { ok: false, error: `${WORD_MAX_LENGTH} caractères maximum.` };
       return { ok: true, value: s };
@@ -147,6 +222,20 @@ export function validateAnswer(media: Media, raw: unknown): ValidationResult {
       }
       if (!graphemes.every(isEmojiGrapheme)) return { ok: false, error: "Uniquement des emojis." };
       return { ok: true, value: graphemes.join("") };
+    }
+    case "dessin":
+    case "photo": {
+      if (!ctx) return { ok: false, error: "Contexte manquant." };
+      if (s !== answerFilePath(ctx.roomId, ctx.roundId, media)) return { ok: false, error: "Fichier invalide." };
+      return { ok: true, value: s };
+    }
+    case "musique": {
+      if (!/^\d{1,15}$/.test(s)) return { ok: false, error: "Choisis un morceau dans la liste." };
+      return { ok: true, value: s };
+    }
+    case "gif": {
+      if (!/^[A-Za-z0-9]{5,40}$/.test(s)) return { ok: false, error: "Choisis un GIF dans la liste." };
+      return { ok: true, value: s };
     }
   }
 }
@@ -172,9 +261,9 @@ export function appealAverage(scores: readonly number[]): number {
   return Math.round(avg * 2) / 2;
 }
 
-/** Note finale = note du juge (ou de l'appel) + 1 si coup de cœur, plafonnée à 5. */
-export function finalScore(base: number, heart: boolean): number {
-  return Math.min(5, base + (heart ? 1 : 0));
+/** Note finale = note du juge (ou de l'appel) + 1 si coup de cœur + 1 si originalité, plafonnée à 5. */
+export function finalScore(base: number, heart: boolean, originality = false): number {
+  return Math.min(5, base + (heart ? 1 : 0) + (originality ? 1 : 0));
 }
 
 // ---------- Roue ----------
@@ -209,20 +298,25 @@ export interface TurnInput {
 
 export interface TurnResult extends SpinResult {
   from: number;
+  /** Case atteinte par la roue, avant l'effet de case. */
+  landed: number;
+  effect: CaseEffect | null;
+  /** Position finale, après l'effet. */
   to: number;
   turnsCounted: number;
   outcome: Outcome;
 }
 
-/** Phases spin + moving : tirage, déplacement, décompte des tours, victoire ou défaite. */
-export function resolveTurn(input: TurnInput, rng: () => number = Math.random): TurnResult {
+/** Phases spin + moving : tirage, déplacement, effet de case, décompte des tours, victoire ou défaite. */
+export function resolveTurn(board: Board, input: TurnInput, rng: () => number = Math.random): TurnResult {
   const spin = spinWheel(wheelLevel(input.finalScore), rng);
-  const to = Math.min(FINISH, input.position + spin.steps);
+  const landed = Math.min(FINISH, input.position + spin.steps);
+  const { effect, to } = applyCaseEffect(board, landed, rng);
   const turnsCounted = input.turnsCounted + 1;
   let outcome: Outcome = null;
   if (to >= FINISH) outcome = "win";
   else if (turnsCounted >= MAX_TURNS) outcome = "lose";
-  return { ...spin, from: input.position, to, turnsCounted, outcome };
+  return { ...spin, from: input.position, landed, effect, to, turnsCounted, outcome };
 }
 
 export function otherSeat(seat: number): 0 | 1 {

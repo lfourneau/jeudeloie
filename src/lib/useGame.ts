@@ -1,6 +1,7 @@
 // État de la partie : tout vient de la base. Au chargement on lit, puis on s'abonne.
 // Un rafraîchissement ou une coupure réseau ne perd rien : on relit et on se réabonne.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { REFRESH_EVENT } from "./actions";
 import { supabase } from "./supabase";
 import type { GameState, Player, Room, Round, Secret } from "./types";
 
@@ -67,12 +68,14 @@ export function useGame(roomId: string) {
     const onVisible = () => document.visibilityState === "visible" && scheduleLoad();
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", scheduleLoad);
+    window.addEventListener(REFRESH_EVENT, scheduleLoad);
     // Filet de sécurité si un événement Realtime se perd
     const poll = window.setInterval(scheduleLoad, 15000);
     return () => {
       supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", scheduleLoad);
+      window.removeEventListener(REFRESH_EVENT, scheduleLoad);
       window.clearInterval(poll);
       window.clearTimeout(timer.current);
     };

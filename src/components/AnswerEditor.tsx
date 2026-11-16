@@ -1,5 +1,9 @@
 import { type Media, MAX_EMOJIS, splitGraphemes, validateAnswer, WORD_MAX_LENGTH } from "@rules";
 import { useState } from "react";
+import { actions } from "../lib/actions";
+import { DrawingEditor } from "./DrawingEditor";
+import { GifPicker, MusicPicker } from "./MediaPicker";
+import { PhotoEditor } from "./PhotoEditor";
 import { Button, ErrorText, MEDIA_LABEL } from "./ui";
 
 const EMOJI_GROUPS: { name: string; list: string }[] = [
@@ -11,12 +15,61 @@ const EMOJI_GROUPS: { name: string; list: string }[] = [
   { name: "Objets", list: "🏠🏙️🏰💼💻📱📷🎁💰⏰🗝️🚀🛁🪴🧸🎈🪩🎓👶🌍" },
 ];
 
-/** Éditeur du média imposé. Validation identique à celle du serveur (rules.ts). */
-export function AnswerEditor({ media, onSubmit }: { media: Media; onSubmit: (value: string) => Promise<void> }) {
+/** Éditeur du média imposé. Le serveur revalide tout (rules.ts). */
+export function AnswerEditor({
+  media,
+  roomId,
+  onSubmit,
+}: {
+  media: Media;
+  roomId: string;
+  onSubmit: (value: string) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async (produce: () => Promise<string>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onSubmit(await produce());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+      setBusy(false);
+    }
+  };
+
+  let editor: React.ReactNode;
+  switch (media) {
+    case "dessin":
+      editor = <DrawingEditor busy={busy} onDone={(png) => run(() => actions.uploadAnswerImage(roomId, png))} />;
+      break;
+    case "photo":
+      editor = <PhotoEditor busy={busy} onDone={(jpeg) => run(() => actions.uploadAnswerImage(roomId, jpeg))} />;
+      break;
+    case "musique":
+      editor = <MusicPicker roomId={roomId} busy={busy} onDone={(id) => run(async () => id)} />;
+      break;
+    case "gif":
+      editor = <GifPicker roomId={roomId} busy={busy} onDone={(id) => run(async () => id)} />;
+      break;
+    default:
+      return <TextEditor media={media} onSubmit={onSubmit} />;
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      {editor}
+      <ErrorText>{error}</ErrorText>
+    </div>
+  );
+}
+
+/** Mot, nombre, emojis. Validation identique à celle du serveur. */
+function TextEditor({ media, onSubmit }: { media: "mot" | "nombre" | "emojis"; onSubmit: (value: string) => Promise<void> }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const effective: Media = media === "dessin" || media === "photo" ? "mot" : media;
+  const effective = media;
   const check = validateAnswer(effective, value);
 
   const submit = async () => {

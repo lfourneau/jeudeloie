@@ -28,7 +28,7 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
         </Card>
       </motion.div>
       <Card>
-        <AnswerEditor media={round.media} onSubmit={async (v) => void (await actions.submitAnswer(data.room.id, v))} />
+        <AnswerEditor media={round.media} roomId={data.room.id} onSubmit={async (v) => void (await actions.submitAnswer(data.room.id, v))} />
       </Card>
       <p className="text-center text-xs text-muted">{partner.name} verra ta réponse, pas la question.</p>
     </>

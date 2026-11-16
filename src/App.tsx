@@ -2,6 +2,7 @@ import { normalizeRoomCode } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MiniBoard } from "./components/Board";
+import { BoardPanel, BoardSheet, GameLayout } from "./components/Layout";
 import { Card, Dots, Screen } from "./components/ui";
 import { ensureSession, supabaseConfigured } from "./lib/supabase";
 import { setCurrentUserId, useGame } from "./lib/useGame";
@@ -98,6 +99,8 @@ function animatedKey(roomId: string) {
 function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onLeave: () => void }) {
   const { data, notMember, onlineSeats } = useGame(roomId);
   const [animated, setAnimated] = useState<string | null>(() => storage(animatedKey(roomId)));
+  const [animPos, setAnimPos] = useState<number | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (notMember) onLeave();
@@ -112,6 +115,7 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
     if (!lastSpun) return;
     storage(animatedKey(roomId), lastSpun.id);
     setAnimated(lastSpun.id);
+    setAnimPos(null);
   }, [lastSpun, roomId]);
 
   if (!data) return <Loading />;
@@ -126,15 +130,16 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
   const pendingWheel = lastSpun && lastSpun.id !== animated ? lastSpun : null;
   if (!pendingWheel && data.game.phase === "finished") return <End data={data} onLeave={onLeave} />;
 
+  const pawn = data.game.pawn;
   const round = data.rounds.find((r) => r.id === data.game.current_round_id);
   const turn = pendingWheel ? pendingWheel.turn_number : data.game.turns_counted + 1;
-  const position = pendingWheel ? pendingWheel.case_index : data.game.position;
+  const position = pendingWheel ? (animPos ?? pendingWheel.case_index) : data.game.position;
 
   let content: React.ReactNode;
   let key: string;
   if (pendingWheel) {
     key = `wheel-${pendingWheel.id}`;
-    content = <WheelScreen round={pendingWheel} onDone={markAnimated} />;
+    content = <WheelScreen round={pendingWheel} pawn={pawn} onPosition={setAnimPos} onDone={markAnimated} />;
   } else if (!round) {
     key = "wait";
     content = <Loading />;
@@ -166,9 +171,24 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
     }
   }
 
+  const boardPanel = <BoardPanel position={position} pawn={pawn} turn={turn} />;
+
   return (
-    <Screen>
-      <MiniBoard position={position} turn={turn} partnerName={partner.name} partnerOnline={onlineSeats.includes(partner.seat)} />
+    <GameLayout board={boardPanel}>
+      <div className="lg:hidden">
+        <MiniBoard
+          position={position}
+          turn={turn}
+          pawn={pawn}
+          partnerName={partner.name}
+          partnerOnline={onlineSeats.includes(partner.seat)}
+          onOpenBoard={() => setSheetOpen(true)}
+        />
+      </div>
+      <div className="hidden items-center justify-end gap-2 text-sm text-muted lg:flex">
+        <span className={`h-2 w-2 rounded-full ${onlineSeats.includes(partner.seat) ? "bg-mint" : "bg-white/20"}`} />
+        {partner.name} {onlineSeats.includes(partner.seat) ? "est connecté·e" : "est hors ligne"}
+      </div>
       <AnimatePresence mode="wait">
         <motion.div
           key={key}
@@ -181,6 +201,9 @@ function Game({ roomId, userId, onLeave }: { roomId: string; userId: string; onL
           {content}
         </motion.div>
       </AnimatePresence>
-    </Screen>
+      <BoardSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
+        {boardPanel}
+      </BoardSheet>
+    </GameLayout>
   );
 }

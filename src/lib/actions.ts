@@ -1,6 +1,9 @@
 // Toutes les écritures passent par les Edge Functions : le client n'écrit jamais en base.
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import type { GifMedia, MusicMedia } from "./types";
+
+export const REFRESH_EVENT = "dlq:refresh";
 
 export class ActionError extends Error {
   constructor(message: string, public status?: number) {
@@ -24,6 +27,8 @@ async function call<T = unknown>(name: string, body: Record<string, unknown>): P
     }
     throw new ActionError("Connexion au serveur impossible. Vérifie ton réseau.");
   }
+  // Rafraîchit l'état tout de suite chez celui qui agit, sans attendre l'événement Realtime.
+  window.dispatchEvent(new Event(REFRESH_EVENT));
   return data as T;
 }
 
@@ -38,4 +43,16 @@ export const actions = {
   submitAppealScore: (room_id: string, score: number) => call("submit-appeal-score", { room_id, score }),
   continueTurn: (room_id: string) => call("continue", { room_id }),
   rematch: (room_id: string) => call("rematch", { room_id }),
+  setPawn: (room_id: string, pawn: string) => call("set-pawn", { room_id, pawn }),
+  searchMedia: (room_id: string, q: string) =>
+    call<{ results: (MusicMedia | GifMedia)[] }>("search-media", { room_id, q }),
+  /** Envoie une image (dessin, photo) au chemin imposé par le serveur et renvoie ce chemin. */
+  uploadAnswerImage: async (room_id: string, blob: Blob): Promise<string> => {
+    const { path, token } = await call<{ path: string; token: string }>("upload-url", { room_id });
+    const { error } = await supabase.storage
+      .from("answers")
+      .uploadToSignedUrl(path, token, blob, { contentType: blob.type, upsert: true });
+    if (error) throw new ActionError("L'envoi de l'image a échoué, réessaie.");
+    return path;
+  },
 };

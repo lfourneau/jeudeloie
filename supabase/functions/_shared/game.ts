@@ -3,6 +3,7 @@ import boardJson from "./content/board.json" with { type: "json" };
 import questionsJson from "./content/questions.json" with { type: "json" };
 import { adminClient, type PlayerRow, requirePlayer, requireUser } from "./auth.ts";
 import { fromSqlError, HttpError, requireString } from "./http.ts";
+import { giphyEnabled } from "./media.ts";
 import {
   type Board,
   drawQuestion,
@@ -28,6 +29,7 @@ export interface GameState {
   appeal_used: boolean;
   current_round_id: string | null;
   outcome: "win" | "lose" | null;
+  pawn: string;
   version: number;
   updated_at: string;
 }
@@ -40,14 +42,19 @@ export interface Round {
   media: Media;
   answerer_seat: 0 | 1;
   answer_text: string | null;
+  answer_media_path: string | null;
+  answer_media: unknown;
   guess_text: string | null;
   llm_score: number | null;
   llm_comment: string | null;
   judge_failed: boolean;
+  originality_bonus: boolean;
   heart: boolean;
   appeal_scores: Record<string, number>;
   appeal_manual: boolean;
   final_score: number | null;
+  landed_index: number | null;
+  case_effect: unknown;
   continue_votes: number[];
   revealed: boolean;
 }
@@ -142,7 +149,8 @@ export async function prepareRound(
   const answerer = players.find((p) => p.seat === answererSeat);
   if (!answerer) throw new HttpError(409, "Il manque un joueur.");
 
-  const media = mediaForCase(board, position);
+  let media = mediaForCase(board, position);
+  if (media === "gif" && !giphyEnabled()) media = "emojis"; // GIF non configurés : on ne bloque pas le tour
   const q = drawQuestion(questions, media, usedIds);
   const roundId = crypto.randomUUID();
   return {
@@ -164,8 +172,12 @@ export async function prepareRound(
  */
 export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: Partial<Round>): Promise<void> {
   const heart = patch.heart ?? round.heart;
-  const final = finalScore(base, heart);
-  const turn = resolveTurn({ position: ctx.state.position, turnsCounted: ctx.state.turns_counted, finalScore: final });
+  const final = finalScore(base, heart, round.originality_bonus);
+  const turn = resolveTurn(board, {
+    position: ctx.state.position,
+    turnsCounted: ctx.state.turns_counted,
+    finalScore: final,
+  });
 
   const roundPatch: Partial<Round> & { id: string } & Record<string, unknown> = {
     ...patch,
@@ -174,6 +186,8 @@ export async function spinAndMove(ctx: Ctx, round: Round, base: number, patch: P
     wheel_level: turn.level,
     wheel_index: turn.segmentIndex,
     wheel_result: turn.steps,
+    landed_index: turn.landed,
+    case_effect: turn.effect,
     position_after: turn.to,
     revealed: true,
   };

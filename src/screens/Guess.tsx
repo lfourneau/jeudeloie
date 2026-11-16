@@ -1,22 +1,9 @@
 import { GUESS_MAX_LENGTH, validateGuess } from "@rules";
-import { motion } from "framer-motion";
 import { useState } from "react";
+import { AnswerView } from "../components/AnswerView";
 import { Button, Card, Dots, ErrorText, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
-
-export function AnswerDisplay({ text, media }: { text: string | null; media: string }) {
-  return (
-    <motion.p
-      initial={{ scale: 0.5, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 260, damping: 14 }}
-      className={`break-words text-center font-display font-bold ${media === "emojis" ? "text-7xl" : "text-5xl"}`}
-    >
-      {text}
-    </motion.p>
-  );
-}
 
 export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
   const [guess, setGuess] = useState("");
@@ -28,7 +15,7 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
       <Card className="py-8 text-center">
         <p className="text-sm text-muted">Ta réponse</p>
         <div className="my-4">
-          <AnswerDisplay text={round.answer_text} media={round.media} />
+          <AnswerView round={round} />
         </div>
         <p className="font-display text-xl font-semibold">
           {partner.name} devine… <Dots />
@@ -56,7 +43,7 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
         <p className="mb-4 text-center text-sm text-muted">
           {partner.name} a répondu avec {MEDIA_LABEL[round.media].label} {MEDIA_LABEL[round.media].icon}
         </p>
-        <AnswerDisplay text={round.answer_text} media={round.media} />
+        <AnswerView round={round} />
       </Card>
       <Card className="flex flex-col gap-3">
         <label htmlFor="guess" className="font-display text-lg font-semibold">

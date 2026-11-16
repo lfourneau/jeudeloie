@@ -10,11 +10,11 @@
     },
     {
       "index": 2,
-      "type": "nombre"
+      "type": "emojis"
     },
     {
       "index": 3,
-      "type": "emojis"
+      "type": "nombre"
     },
     {
       "index": 4,
@@ -22,23 +22,23 @@
     },
     {
       "index": 5,
-      "type": "mot"
-    },
-    {
-      "index": 6,
       "type": "dessin"
     },
     {
+      "index": 6,
+      "type": "gif"
+    },
+    {
       "index": 7,
-      "type": "nombre"
+      "type": "chance"
     },
     {
       "index": 8,
-      "type": "coffre"
+      "type": "musique"
     },
     {
       "index": 9,
-      "type": "emojis"
+      "type": "photo"
     },
     {
       "index": 10,
@@ -46,11 +46,11 @@
     },
     {
       "index": 11,
-      "type": "piege"
+      "type": "emojis"
     },
     {
       "index": 12,
-      "type": "photo"
+      "type": "malchance"
     },
     {
       "index": 13,
@@ -58,47 +58,47 @@
     },
     {
       "index": 14,
-      "type": "emojis"
-    },
-    {
-      "index": 15,
-      "type": "tempete"
-    },
-    {
-      "index": 16,
-      "type": "mot"
-    },
-    {
-      "index": 17,
       "type": "dessin"
     },
     {
+      "index": 15,
+      "type": "chance"
+    },
+    {
+      "index": 16,
+      "type": "gif"
+    },
+    {
+      "index": 17,
+      "type": "musique"
+    },
+    {
       "index": 18,
-      "type": "coffre"
-    },
-    {
-      "index": 19,
-      "type": "nombre"
-    },
-    {
-      "index": 20,
-      "type": "emojis"
-    },
-    {
-      "index": 21,
-      "type": "double"
-    },
-    {
-      "index": 22,
-      "type": "mot"
-    },
-    {
-      "index": 23,
       "type": "piege"
     },
     {
-      "index": 24,
+      "index": 19,
       "type": "photo"
+    },
+    {
+      "index": 20,
+      "type": "mot"
+    },
+    {
+      "index": 21,
+      "type": "tremplin"
+    },
+    {
+      "index": 22,
+      "type": "emojis"
+    },
+    {
+      "index": 23,
+      "type": "malchance"
+    },
+    {
+      "index": 24,
+      "type": "dessin"
     },
     {
       "index": 25,
@@ -106,59 +106,59 @@
     },
     {
       "index": 26,
-      "type": "tremplin"
+      "type": "chance"
     },
     {
       "index": 27,
-      "type": "emojis"
+      "type": "gif"
     },
     {
       "index": 28,
-      "type": "piege"
+      "type": "malchance"
     },
     {
       "index": 29,
-      "type": "mot"
+      "type": "musique"
     },
     {
       "index": 30,
-      "type": "dessin"
-    },
-    {
-      "index": 31,
-      "type": "coffre"
-    },
-    {
-      "index": 32,
-      "type": "nombre"
-    },
-    {
-      "index": 33,
-      "type": "piege"
-    },
-    {
-      "index": 34,
-      "type": "emojis"
-    },
-    {
-      "index": 35,
-      "type": "mot"
-    },
-    {
-      "index": 36,
-      "type": "tempete"
-    },
-    {
-      "index": 37,
       "type": "photo"
     },
     {
-      "index": 38,
+      "index": 31,
       "type": "piege"
     },
     {
+      "index": 32,
+      "type": "mot"
+    },
+    {
+      "index": 33,
+      "type": "emojis"
+    },
+    {
+      "index": 34,
+      "type": "chance"
+    },
+    {
+      "index": 35,
+      "type": "dessin"
+    },
+    {
+      "index": 36,
+      "type": "malchance"
+    },
+    {
+      "index": 37,
+      "type": "gif"
+    },
+    {
+      "index": 38,
+      "type": "musique"
+    },
+    {
       "index": 39,
-      "type": "nombre"
+      "type": "photo"
     },
     {
       "index": 40,

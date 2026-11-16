@@ -1,8 +1,10 @@
 import { bestMoments, complicity, heartCount } from "@rules";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { AnswerView } from "../components/AnswerView";
 import { Stars } from "../components/Stars";
-import { Button, Card, ErrorText, Screen } from "../components/ui";
+import { BoardPanel, GameLayout } from "../components/Layout";
+import { Button, Card, ErrorText } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { GameData } from "../lib/useGame";
 
@@ -27,7 +29,7 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
   };
 
   return (
-    <Screen>
+    <GameLayout board={<BoardPanel position={data.game.position} pawn={data.game.pawn} />}>
       <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="pt-6 text-center">
         <div className="text-7xl">{win ? "🏆" : "🌧️"}</div>
         <h1 className="mt-3 font-display text-4xl font-bold">{win ? "Victoire !" : "Presque…"}</h1>
@@ -64,9 +66,10 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
                   <p className="mt-2 text-sm">
                     <span className="text-mint">Question :</span> {data.secrets[r.id]?.question_text}
                   </p>
-                  <p className="my-1 font-display text-2xl font-bold">
-                    {r.answer_text} <span className="text-sm font-normal text-muted">— {answerer?.name}</span>
-                  </p>
+                  <div className="my-2">
+                    <AnswerView round={r} size="sm" />
+                    <p className="mt-1 text-center text-xs text-muted">réponse de {answerer?.name}</p>
+                  </div>
                   <p className="text-sm">
                     <span className="text-rose-soft">Devinée :</span> {r.guess_text} {r.heart && "❤️"}
                   </p>
@@ -84,6 +87,6 @@ export function End({ data, onLeave }: { data: GameData; onLeave: () => void }) 
       <Button variant="ghost" onClick={onLeave}>
         Quitter
       </Button>
-    </Screen>
+    </GameLayout>
   );
 }

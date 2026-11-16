@@ -33,11 +33,31 @@ Deno.serve(handle(async (req, body) => {
     .from("round_secrets").select("question_text").eq("round_id", round.id).single();
   if (error || !secret) throw new HttpError(500, "Erreur serveur.");
 
-  const verdict = await judge({ question: secret.question_text, guess, media: round.media, answer: round.answer_text });
+  let imageUrl: string | null = null;
+  if (round.answer_media_path) {
+    const { data } = await adminClient().storage.from("answers").createSignedUrl(round.answer_media_path, 600);
+    imageUrl = data?.signedUrl ?? null;
+  } else if (round.media === "gif") {
+    imageUrl = (round.answer_media as { still?: string } | null)?.still ?? null;
+  }
+
+  const verdict = await judge({
+    question: secret.question_text,
+    guess,
+    media: round.media,
+    answer: round.answer_text,
+    imageUrl,
+  });
 
   await commit(ctx, {
     roundPatch: verdict
-      ? { id: round.id, llm_score: verdict.score, llm_comment: verdict.commentaire, revealed: true }
+      ? {
+        id: round.id,
+        llm_score: verdict.score,
+        llm_comment: verdict.commentaire,
+        originality_bonus: verdict.originalite,
+        revealed: true,
+      }
       : {
         id: round.id,
         judge_failed: true,
