@@ -1,7 +1,10 @@
 import { GUESS_MAX_LENGTH, type Joker, validateGuess } from "@rules";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { AnswerView } from "../components/AnswerView";
+import { Icon } from "../components/Icon";
 import { JOKER_INFO, JokerBar, JokerHints, usedJokers } from "../components/Jokers";
+import { StampIn } from "../components/Juice";
 import { Button, Card, Dots, ErrorText, Label, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
@@ -13,11 +16,29 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
   const [error, setError] = useState<string | null>(null);
   const inventory = data.game.inventory ?? [];
   const choices = round.joker_choices;
+  const reduce = useReducedMotion();
 
   if (isAnswerer) {
     const used = usedJokers(round);
     return (
-      <Card tilt={-0.4} className="py-8 text-center">
+      <Card tilt={-0.4} className="relative overflow-hidden py-8 text-center">
+        {/* La lettre s'envole vers le partenaire */}
+        {!reduce && (
+          <motion.span
+            aria-hidden
+            className="absolute top-1/2 left-1/2 text-encre-claire"
+            initial={{ x: "-50%", y: 0, rotate: -6, opacity: 1, scale: 1 }}
+            animate={{ x: "160%", y: -220, rotate: 18, opacity: 0, scale: 0.6 }}
+            transition={{ duration: 1.1, ease: [0.5, 0, 0.7, 1] }}
+          >
+            <Icon name="enveloppe" size={64} />
+          </motion.span>
+        )}
+        <div className="absolute top-3 right-3">
+          <StampIn delay={0.5} rotate={5}>
+            <span className="timbre block px-2.5 py-1 font-display text-sm font-bold">Envoyé</span>
+          </StampIn>
+        </div>
         <Label>Ta réponse est partie</Label>
         <div className="my-4">
           <AnswerView round={round} />
@@ -76,7 +97,14 @@ export function Guess({ data, round, partner, isAnswerer }: TurnProps) {
 
   return (
     <>
-      <Card tilt={-0.5} className="py-7">
+      <Card tilt={-0.5} className="relative py-7">
+        <div className="absolute -top-4 -left-2 z-10">
+          <StampIn delay={0.3} rotate={-6}>
+            <span className="cachet flex h-14 w-14 items-center justify-center font-display text-base leading-none font-bold">
+              À toi !
+            </span>
+          </StampIn>
+        </div>
         <p className="titre mb-4 text-center text-2xl">
           {partner.name} t'a envoyé {MEDIA_LABEL[round.media].label}
         </p>

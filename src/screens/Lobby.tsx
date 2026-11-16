@@ -1,13 +1,15 @@
 import { FINISH, MAX_TURNS, PAWNS } from "@rules";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameMenu } from "../components/GameMenu";
 import { BoardPanel, GameLayout } from "../components/Layout";
 import { Icon } from "../components/Icon";
+import { StampIn } from "../components/Juice";
 import { Pawn, pawnLabel } from "../components/Pawn";
 import { SquareBoard } from "../components/SquareBoard";
 import { Button, Card, ErrorText } from "../components/ui";
 import { actions } from "../lib/actions";
+import { buzz, sfx } from "../lib/juice";
 import type { GameData } from "../lib/useGame";
 
 export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSeats: number[]; onQuit: () => Promise<void> }) {
@@ -17,6 +19,18 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
   const link = `${window.location.origin}/?code=${data.room.code}`;
   const full = data.players.length === 2;
   const pawn = data.game.pawn;
+
+  // Le partenaire vient d'arriver : coup de tampon « 2/2 » et petit carillon.
+  const wasFull = useRef(full);
+  const [arrived, setArrived] = useState(0);
+  useEffect(() => {
+    if (full && !wasFull.current) {
+      setArrived((a) => a + 1);
+      sfx.chime();
+      buzz([20, 40, 20]);
+    }
+    wasFull.current = full;
+  }, [full]);
 
   const copy = async () => {
     try {
@@ -68,7 +82,13 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
       <Card tilt={0.4}>
         <div className="mb-3 flex items-center justify-between">
           <span className="titre text-[28px]">Les correspondants</span>
-          <span className="font-display text-lg font-bold text-cachet">{data.players.length}/2</span>
+          {arrived > 0 ? (
+            <StampIn key={arrived} rotate={-6} sound={false}>
+              <span className="cachet flex h-12 w-12 items-center justify-center font-display text-lg font-bold">2/2</span>
+            </StampIn>
+          ) : (
+            <span className="font-display text-lg font-bold text-cachet">{data.players.length}/2</span>
+          )}
         </div>
         <ul className="flex flex-col gap-2">
           {[0, 1].map((seat) => {
@@ -98,7 +118,11 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
             <motion.button
               key={p}
               whileTap={{ scale: 0.88 }}
-              onClick={() => p !== pawn && run(() => actions.setPawn(data.room.id, p))}
+              onClick={() => {
+                if (p === pawn) return;
+                sfx.step();
+                run(() => actions.setPawn(data.room.id, p));
+              }}
               aria-pressed={p === pawn}
               aria-label={pawnLabel(p)}
               title={pawnLabel(p)}
@@ -107,7 +131,14 @@ export function Lobby({ data, onlineSeats, onQuit }: { data: GameData; onlineSea
               }`}
               style={{ rotate: ((i * 37) % 7) - 3 }}
             >
-              <Pawn id={p} size={46} />
+              <motion.span
+                key={p === pawn ? `${p}-on` : p}
+                className="inline-flex"
+                animate={p === pawn ? { y: [0, -12, 0, -4, 0], rotate: [0, -8, 6, 0] } : undefined}
+                transition={{ duration: 0.55 }}
+              >
+                <Pawn id={p} size={46} />
+              </motion.span>
             </motion.button>
           ))}
         </div>

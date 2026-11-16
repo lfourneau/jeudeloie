@@ -3,10 +3,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CASE_STYLE } from "../components/cases";
 import { Icon } from "../components/Icon";
+import { PaperConfetti, Sparkles, StampIn, useShake } from "../components/Juice";
 import { SquareBoard } from "../components/SquareBoard";
 import { Stars } from "../components/Stars";
 import { Button, Card } from "../components/ui";
 import { Wheel } from "../components/Wheel";
+import { buzz, sfx } from "../lib/juice";
 import type { Round } from "../lib/types";
 
 const LEVEL_LABEL = ["Roue de consolation", "Petite roue", "Belle roue", "Roue en or"];
@@ -42,6 +44,33 @@ export function WheelScreen({
   const [pos, setPos] = useState(from);
 
   useEffect(() => onPosition(pos), [pos, onPosition]);
+  const { controls: shakeControls, shake } = useShake(8);
+  const good = !!effect && effect.delta > 0;
+
+  // Un pas sonore à chaque case franchie.
+  const [firstPos] = useState(from);
+  useEffect(() => {
+    if (pos !== firstPos) sfx.step();
+  }, [pos, firstPos]);
+
+  // Carte d'effet : montée joyeuse ou descente penaude, et secousse pour les mauvaises nouvelles.
+  useEffect(() => {
+    if (stage !== "effect" || !effect) return;
+    if (effect.delta > 0) sfx.rise();
+    else {
+      sfx.fall();
+      shake();
+      buzz([40, 30, 40]);
+    }
+  }, [stage, effect, shake]);
+
+  // Arrivée : carillon.
+  useEffect(() => {
+    if (stage === "done" && to >= FINISH) {
+      sfx.chime(true);
+      buzz([30, 50, 30, 50, 60]);
+    }
+  }, [stage, to]);
 
   // Avance (ou recule) d'une case à la fois vers la cible de l'étape en cours.
   useEffect(() => {
@@ -77,11 +106,12 @@ export function WheelScreen({
         : `+${round.wheel_result} case${(round.wheel_result ?? 0) > 1 ? "s" : ""}`;
 
   return (
-    <>
+    <motion.div animate={shakeControls} className="relative flex flex-col gap-4">
+      {arrived && <PaperConfetti count={60} spread={1.4} />}
       <Card tilt={-0.4} className="text-center">
         <p className="font-display text-lg text-muted">Note finale du tour</p>
         <div className="my-2">
-          <Stars score={Number(round.final_score ?? 0)} size={30} />
+          <Stars score={Number(round.final_score ?? 0)} size={30} sound={false} />
         </div>
         <p className="titre text-[28px]">{LEVEL_LABEL[level]}</p>
       </Card>
@@ -95,14 +125,12 @@ export function WheelScreen({
       </div>
       <AnimatePresence mode="wait">
         {stage !== "spin" && stage !== "effect" && (
-          <motion.p
-            key="steps"
-            initial={{ scale: 0, rotate: -8 }}
-            animate={{ scale: 1, rotate: -2 }}
-            exit={{ scale: 0 }}
-            className="text-center font-display text-5xl font-bold text-cachet"
-          >
-            +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""}
+          <motion.p key="steps" exit={{ scale: 0 }} className="text-center">
+            <StampIn rotate={-3} sound={false}>
+              <span className="font-display text-5xl font-bold text-cachet">
+                +{round.wheel_result} case{(round.wheel_result ?? 0) > 1 ? "s" : ""}
+              </span>
+            </StampIn>
           </motion.p>
         )}
         {stage === "effect" && effect && effectStyle && (
@@ -111,8 +139,9 @@ export function WheelScreen({
             initial={{ rotateY: 90, scale: 0.8 }}
             animate={{ rotateY: 0, scale: 1, rotate: 4 }}
             exit={{ opacity: 0 }}
-            className="timbre mx-auto w-60 p-5 text-center shadow-[0_14px_26px_-18px_rgba(31,47,74,.6)]"
+            className="timbre relative mx-auto w-60 p-5 text-center shadow-[0_14px_26px_-18px_rgba(31,47,74,.6)]"
           >
+            <Sparkles show={good} />
             <Icon name={effectStyle.icon} size={52} className="mx-auto" />
             <p className="mt-1 font-display text-lg">{effectStyle.label}</p>
             <p className="font-display text-2xl font-bold">{effect.label}</p>
@@ -130,6 +159,6 @@ export function WheelScreen({
       <Button variant="ghost" onClick={onDone}>
         Passer l'animation
       </Button>
-    </>
+    </motion.div>
   );
 }

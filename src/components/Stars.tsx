@@ -1,10 +1,19 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { useEffect } from "react";
+import { sfx } from "../lib/juice";
 
 const STAR = "M12 2.6l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.9l-5.8 3.2 1.4-6.4-4.9-4.4 6.5-.7Z";
 
 /** Note sur 5 en étoiles dessinées à l'encre, pleines en ocre. Gère les demi-points (moyenne d'appel). */
-export function Stars({ score, size = 36 }: { score: number; size?: number }) {
+export function Stars({ score, size = 36, sound = true }: { score: number; size?: number; sound?: boolean }) {
   const reduce = useReducedMotion();
+  // Un petit clic par étoile remplie, au moment où elle se pose.
+  useEffect(() => {
+    if (!sound) return;
+    const filled = Math.ceil(Math.max(0, Math.min(5, score)));
+    const timers = Array.from({ length: filled }, (_, i) => window.setTimeout(() => sfx.tick(), (0.15 * i + 0.12) * 1000));
+    return () => timers.forEach(window.clearTimeout);
+  }, [score, sound]);
   return (
     <div className="flex justify-center gap-1" role="img" aria-label={`${score} sur 5`}>
       {[0, 1, 2, 3, 4].map((i) => {

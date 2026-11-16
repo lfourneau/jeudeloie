@@ -1,19 +1,29 @@
 import { finalScore } from "@rules";
 import { AnimatePresence, motion } from "framer-motion";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { AnswerView } from "../components/AnswerView";
 import { Icon, Sheep } from "../components/Icon";
 import { JOKER_INFO, usedJokers } from "../components/Jokers";
+import { HeartBurst, PaperConfetti, StampIn } from "../components/Juice";
+import { buzz, sfx } from "../lib/juice";
 import { Stars } from "../components/Stars";
 import { Button, Card, ErrorText, Label, Letter } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
 
 /** Bulle du mouton juge : hauteur libre, le commentaire s'affiche toujours en entier. */
-export function JudgeSays({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+export function JudgeSays({ children, delay = 0, mood }: { children: ReactNode; delay?: number; mood?: "no" | "yes" }) {
   return (
     <div className="flex items-end gap-2">
-      <Sheep size={76} className="-mb-1" />
+      <motion.div
+        className="-mb-1"
+        animate={
+          mood === "no" ? { rotate: [0, -10, 10, -8, 8, 0] } : mood === "yes" ? { y: [0, -10, 0, -6, 0] } : undefined
+        }
+        transition={{ delay: delay + 0.3, duration: 0.7 }}
+      >
+        <Sheep size={76} />
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -39,6 +49,31 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
   const manual = round.llm_score === null;
   const canAppeal = !manual && !data.game.appeal_used;
   const bonuses = [round.heart && "cœur +1", round.originality_bonus && "originalité +1"].filter(Boolean);
+  const perfect = !manual && round.llm_score === 5;
+  const [burst, setBurst] = useState(0);
+
+  // 5/5 : carillon quand les étoiles ont fini de se poser.
+  useEffect(() => {
+    if (!perfect) return;
+    const t = window.setTimeout(() => {
+      sfx.chime();
+      buzz([20, 40, 20]);
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [perfect]);
+
+  // Le répondant voit le cœur arriver : petit éclat et « pop » chez lui aussi.
+  const [heartSeen, setHeartSeen] = useState(round.heart);
+  useEffect(() => {
+    if (round.heart && !heartSeen) {
+      setHeartSeen(true);
+      if (isAnswerer) {
+        sfx.pop();
+        buzz(25);
+        setBurst((b) => b + 1);
+      }
+    }
+  }, [round.heart, heartSeen, isAnswerer]);
 
   const act = async (key: string, fn: () => Promise<unknown>) => {
     setBusy(key);
@@ -77,7 +112,17 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
         </Letter>
       </motion.div>
 
-      <Card tilt={0.3} className="flex flex-col gap-3">
+      <Card tilt={0.3} className="relative flex flex-col gap-3">
+        {perfect && <PaperConfetti />}
+        {perfect && (
+          <div className="absolute -top-4 right-3 z-10">
+            <StampIn delay={0.85} rotate={6}>
+              <span className="cachet flex h-16 w-16 items-center justify-center font-display text-lg leading-none font-bold">
+                Parfait !
+              </span>
+            </StampIn>
+          </div>
+        )}
         <p className="titre text-[28px]">Le verdict du mouton</p>
         {manual ? (
           <>
@@ -87,16 +132,17 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
         ) : (
           <>
             <Stars score={round.llm_score!} />
-            <JudgeSays delay={0.9}>{round.llm_comment}</JudgeSays>
+            <JudgeSays delay={0.9} mood={round.llm_score === 0 ? "no" : perfect ? "yes" : undefined}>
+              {round.llm_comment}
+            </JudgeSays>
             {round.originality_bonus && (
-              <motion.p
-                initial={{ scale: 0, rotate: -12 }}
-                animate={{ scale: 1, rotate: -4 }}
-                transition={{ delay: 1.2, type: "spring" }}
-                className="timbre mx-auto flex w-fit items-center gap-1.5 px-3 py-1.5 font-display text-lg font-bold"
-              >
-                <Icon name="etoile" size={20} /> Originalité +1
-              </motion.p>
+              <div className="text-center">
+                <StampIn delay={1.2} rotate={-4}>
+                  <span className="timbre flex w-fit items-center gap-1.5 px-3 py-1.5 font-display text-lg font-bold">
+                    <Icon name="etoile" size={20} /> Originalité +1
+                  </span>
+                </StampIn>
+              </div>
             )}
             <p className="text-center text-muted">
               Note finale :{" "}
@@ -114,19 +160,34 @@ export function Reveal({ data, round, secret, me, partner, isAnswerer }: TurnPro
           <motion.button
             whileTap={{ scale: 1.15 }}
             disabled={round.heart || busy !== null}
-            onClick={() => act("heart", () => actions.react(data.room.id))}
+            onClick={() => {
+              sfx.pop();
+              buzz(25);
+              setBurst((b) => b + 1);
+              setHeartSeen(true);
+              act("heart", () => actions.react(data.room.id));
+            }}
             aria-pressed={round.heart}
-            className={`pilule flex min-h-11 flex-1 items-center justify-center gap-2 border-[1.5px] px-3 py-2.5 font-display text-lg font-bold whitespace-nowrap transition ${
+            className={`pilule relative flex min-h-11 flex-1 items-center justify-center gap-2 border-[1.5px] px-3 py-2.5 font-display text-lg font-bold whitespace-nowrap transition ${
               round.heart ? "border-cachet bg-rose text-encre" : "border-encre/60 bg-lettre"
             }`}
           >
+            <HeartBurst burstKey={burst} />
             <Icon name="coeur" size={22} fill={round.heart ? "#B5442E" : "none"} className={round.heart ? "text-cachet" : ""} />
             {round.heart ? "Coup de cœur !" : "Coup de cœur"}
           </motion.button>
         )}
         {isAnswerer && round.heart && (
-          <div className="flex flex-1 items-center justify-center gap-2 px-4 py-3 text-center font-display text-lg font-bold text-cachet">
-            <Icon name="coeur" size={22} fill="#B5442E" /> {partner.name} a adoré ta réponse
+          <div className="relative flex flex-1 items-center justify-center gap-2 px-4 py-3 text-center font-display text-lg font-bold text-cachet">
+            <HeartBurst burstKey={burst} />
+            <motion.span
+              animate={burst ? { scale: [1, 1.45, 0.9, 1.15, 1] } : undefined}
+              transition={{ duration: 0.6 }}
+              className="inline-flex"
+            >
+              <Icon name="coeur" size={22} fill="#B5442E" />
+            </motion.span>{" "}
+            {partner.name} a adoré ta réponse
           </div>
         )}
         {canAppeal && (

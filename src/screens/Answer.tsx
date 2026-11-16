@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { AnswerEditor } from "../components/AnswerEditor";
 import { Icon } from "../components/Icon";
+import { StampIn } from "../components/Juice";
 import { Card, Dots, Label, Letter, MEDIA_LABEL } from "../components/ui";
 import { actions } from "../lib/actions";
 import type { TurnProps } from "./turn";
@@ -20,7 +21,19 @@ export function Answer({ data, round, secret, partner, isAnswerer }: TurnProps) 
   }
   return (
     <>
-      <motion.div initial={{ rotateX: 90 }} animate={{ rotateX: 0 }} transition={{ type: "spring", damping: 14 }}>
+      <motion.div
+        className="relative"
+        initial={{ rotateX: 90 }}
+        animate={{ rotateX: 0 }}
+        transition={{ type: "spring", damping: 14 }}
+      >
+        <div className="absolute -top-4 -left-2 z-10">
+          <StampIn delay={0.35} rotate={-6}>
+            <span className="cachet flex h-14 w-14 items-center justify-center font-display text-base leading-none font-bold">
+              À toi !
+            </span>
+          </StampIn>
+        </div>
         <Letter stamp={<Icon name={media.icon} size={26} />}>
           <Label>Question secrète · réponds avec {media.label}</Label>
           <p className="mt-1 pr-8 font-display text-[26px] leading-[32px] font-bold">{secret ? secret.question_text : <Dots />}</p>

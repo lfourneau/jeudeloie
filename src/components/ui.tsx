@@ -1,4 +1,6 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { type ButtonHTMLAttributes, type ReactNode, useEffect } from "react";
+import { sfx } from "../lib/juice";
 import type { IconName } from "./Icon";
 
 type Variant = "primary" | "secondary" | "ghost";
@@ -11,15 +13,19 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; busy?: boolean }) {
   const styles: Record<Variant, string> = {
-    primary: "pilule bg-encre text-lettre text-xl shadow-[0_8px_18px_-12px_rgba(31,47,74,.8)] hover:bg-encre-claire active:scale-[0.98]",
+    primary: "pilule bg-encre text-lettre text-xl shadow-[0_8px_18px_-12px_rgba(31,47,74,.8)] hover:bg-encre-claire",
     secondary: "pilule border-[1.5px] border-encre/60 bg-lettre text-encre text-lg hover:bg-papier active:scale-[0.98]",
     ghost: "bg-transparent text-encre-claire text-base underline decoration-encre/30 underline-offset-4 hover:decoration-cachet",
   };
   return (
     <button
       {...props}
+      onPointerDown={(e) => {
+        if (variant !== "ghost" && !props.disabled && !busy) sfx.paper();
+        props.onPointerDown?.(e);
+      }}
       disabled={props.disabled || busy}
-      className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-5 py-2.5 font-display font-bold transition disabled:opacity-45 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-5 py-2.5 font-display font-bold transition disabled:opacity-45 ${variant === "primary" ? "active:scale-y-[0.94] active:scale-x-[1.02]" : ""} ${styles[variant]} ${className}`}
     >
       {busy ? <Dots /> : children}
     </button>
@@ -58,12 +64,25 @@ export function Screen({ children }: { children: ReactNode }) {
   return <div className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pb-10 pt-4">{children}</div>;
 }
 
+/** Message d'erreur : petite secousse et son doux à chaque nouveau message. */
 export function ErrorText({ children }: { children: ReactNode }) {
+  const reduce = useReducedMotion();
+  const key = typeof children === "string" ? children : children ? "erreur" : "";
+  useEffect(() => {
+    if (key) sfx.soft();
+  }, [key]);
   if (!children) return null;
   return (
-    <p role="alert" className="border-l-2 border-cachet bg-lettre/70 px-3 py-2 text-[15px] text-cachet italic">
+    <motion.p
+      key={key}
+      role="alert"
+      initial={reduce ? false : { x: 0 }}
+      animate={reduce ? undefined : { x: [0, -5, 5, -3, 3, 0] }}
+      transition={{ duration: 0.35 }}
+      className="border-l-2 border-cachet bg-lettre/70 px-3 py-2 text-[15px] text-cachet italic"
+    >
       {children}
-    </p>
+    </motion.p>
   );
 }
 

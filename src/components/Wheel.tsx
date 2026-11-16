@@ -1,5 +1,6 @@
-import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
+import { animate, motion, useAnimationControls, useMotionValue, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
+import { buzz, sfx } from "../lib/juice";
 
 const LAVIS = ["#9DB4D0", "#E6BE6A", "#E8B4A8", "#A9C0A2"];
 
@@ -39,6 +40,23 @@ export function Wheel({
   const reduce = useReducedMotion();
   const size = 260;
   const secs = sectors(segments);
+  const arrow = useAnimationControls();
+
+  // Cliquetis : chaque trait d'encre entre deux secteurs qui passe sous la flèche fait « tic »
+  // et fait sursauter la flèche. Le ralentissement de la roue espace naturellement les tics.
+  useEffect(() => {
+    if (reduce) return;
+    let prev = rotation.get();
+    return rotation.on("change", (r) => {
+      const crossed = secs.some((sec) => Math.floor((prev + sec.from) / 360) !== Math.floor((r + sec.from) / 360));
+      prev = r;
+      if (crossed) {
+        sfx.tick();
+        void arrow.start({ rotate: [-22, 0], transition: { duration: 0.18, ease: "easeOut" } });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rotation, reduce, n]);
 
   useEffect(() => {
     // La flèche est en haut : on amène le milieu de la part tirée sous la flèche.
@@ -48,7 +66,15 @@ export function Wheel({
       const t = window.setTimeout(() => onDone?.(), 300);
       return () => window.clearTimeout(t);
     }
-    const controls = animate(rotation, target, { duration, ease: [0.15, 0.8, 0.2, 1], onComplete: onDone });
+    const controls = animate(rotation, target, {
+      duration,
+      ease: [0.15, 0.8, 0.2, 1],
+      onComplete: () => {
+        sfx.stamp();
+        buzz(30);
+        onDone?.();
+      },
+    });
     return () => controls.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segmentIndex, n]);
@@ -60,9 +86,11 @@ export function Wheel({
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       {/* Flèche à l'encre */}
-      <svg viewBox="0 0 30 34" width={30} height={34} className="absolute -top-5 left-1/2 z-10 -translate-x-1/2" aria-hidden>
-        <path d="M3 3c8 .6 16 .4 24-.2L15.4 31Z" fill="#1F2F4A" stroke="#1F2F4A" strokeWidth={2} strokeLinejoin="round" />
-      </svg>
+      <div className="absolute -top-5 left-1/2 z-10 -translate-x-1/2">
+        <motion.svg viewBox="0 0 30 34" width={30} height={34} animate={arrow} style={{ originY: 0.1 }} aria-hidden>
+          <path d="M3 3c8 .6 16 .4 24-.2L15.4 31Z" fill="#1F2F4A" stroke="#1F2F4A" strokeWidth={2} strokeLinejoin="round" />
+        </motion.svg>
+      </div>
       <motion.div
         className="relative h-full w-full rounded-full"
         style={{

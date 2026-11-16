@@ -215,7 +215,16 @@ export function SquareBoard({
         animate={{ left: `${at.col * SLOT + SLOT * 0.52}%`, top: `${at.row * SLOT - SLOT * 0.04}%` }}
         transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 22 }}
       >
-        <Pawn id={pawn} size="100%" />
+        {/* petit saut à chaque case */}
+        <motion.div
+          key={position}
+          className="h-full w-full"
+          initial={false}
+          animate={reduce ? undefined : { y: ["0%", "-38%", "0%"], scaleY: [1, 1.06, 0.9, 1] }}
+          transition={{ duration: 0.26, ease: "easeOut" }}
+        >
+          <Pawn id={pawn} size="100%" />
+        </motion.div>
       </motion.div>
     </div>
   );

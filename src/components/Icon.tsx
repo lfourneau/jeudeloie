@@ -33,7 +33,9 @@ export type IconName =
   | "plateau"
   | "sortie"
   | "recommencer"
-  | "menu";
+  | "menu"
+  | "son"
+  | "muet";
 
 const PATHS: Record<IconName, ReactNode> = {
   // bulle avec deux lignes d'écriture
@@ -212,6 +214,20 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   // trois traits tremblés
+  // haut-parleur et ondes
+  son: (
+    <>
+      <path d="M4.2 9.4c1.4-.2 2.8-.2 4.2 0l4.6-4c.4 4.4.4 8.8 0 13.2l-4.6-4c-1.4.2-2.8.2-4.2 0-.3-1.7-.3-3.5 0-5.2Z" />
+      <path d="M16.2 9.2c1.2 1.7 1.2 3.9 0 5.6M18.8 6.8c2.4 3.2 2.4 7.2 0 10.4" />
+    </>
+  ),
+  // haut-parleur barré
+  muet: (
+    <>
+      <path d="M4.2 9.4c1.4-.2 2.8-.2 4.2 0l4.6-4c.4 4.4.4 8.8 0 13.2l-4.6-4c-1.4.2-2.8.2-4.2 0-.3-1.7-.3-3.5 0-5.2Z" />
+      <path d="M16 9.4l4.4 5.2M20.4 9.4 16 14.6" />
+    </>
+  ),
   menu: <path d="M4.6 7.2c4.9-.3 9.9-.3 14.8 0M4.4 12.1c5-.2 10.1-.2 15.2.1M4.8 16.9c4.8-.3 9.6-.3 14.4 0" />,
 };
 

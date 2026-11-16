@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { sfx, useSound } from "../lib/juice";
 import { Icon } from "./Icon";
 import { Dots } from "./ui";
 
@@ -15,6 +16,7 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const [soundOn, setSoundOn] = useSound();
 
   useEffect(() => {
     if (!open) return;
@@ -101,6 +103,18 @@ export function GameMenu({ onQuit, onReset }: { onQuit: () => Promise<void>; onR
               </div>
             ) : (
               <>
+                <button
+                  type="button"
+                  role="menuitemcheckbox"
+                  aria-checked={soundOn}
+                  className={item}
+                  onClick={() => {
+                    setSoundOn(!soundOn);
+                    if (!soundOn) window.setTimeout(() => sfx.tick(), 30);
+                  }}
+                >
+                  <Icon name={soundOn ? "son" : "muet"} size={20} /> Son : {soundOn ? "activé" : "coupé"}
+                </button>
                 {onReset && (
                   <button type="button" role="menuitem" className={item} onClick={() => setConfirm("reset")}>
                     <Icon name="recommencer" size={20} /> Recommencer la partie

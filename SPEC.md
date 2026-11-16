@@ -369,3 +369,20 @@ Les indices sont écrits dans le tour (`joker_keyword`, `joker_topic`, `joker_ch
 **Quitter et recommencer** : un menu « Partie » est présent en salle d'attente, pendant la partie et à la fin.
 - « Quitter la partie » (tout le monde) : fonction `leave-room` → fonction SQL `leave_room`. Le joueur est retiré ; celui qui reste devient l'hôte (siège 0) et revient en salle d'attente, et un nouveau partenaire peut rejoindre avec le même code. S'il ne reste personne, la salle est supprimée.
 - « Recommencer la partie » (hôte seulement, siège 0) : fonction `reset-game`, retour en salle d'attente avec les mêmes joueurs, à n'importe quel moment de la partie.
+
+## Évolutions V4 bis : game juice et sélecteur d'emojis
+
+**Game juice** (front uniquement, dans la direction artistique « carnet ») :
+- coups de tampon pour les annonces : « À toi ! », « Envoyé », « Parfait ! », « +N cases », bonus d'originalité, cachet de fin ;
+- confettis de papier aquarellé à 5/5 et à l'arrivée ;
+- lettre qui s'envole quand la réponse part ;
+- cœurs qui jaillissent au coup de cœur ;
+- roue qui cliquette, avec une flèche qui sursaute ;
+- pion qui saute de case en case ;
+- secousse sur un piège ou une malchance, étincelles sur une chance ou un tremplin ;
+- oblitération postale animée sur un joker utilisé, indices qui arrivent comme des étiquettes collées ;
+- secousse des messages d'erreur.
+
+**Sons** : synthétisés dans le navigateur (`src/lib/juice.ts`, Web Audio, aucun fichier audio). Ils accompagnent ces moments : froissement de papier, tampon, cliquetis, pas, carillon… Une vibration courte s'y ajoute sur téléphone. Le son se coupe dans le menu « Partie », réglage mémorisé par appareil. Avec « réduire les animations », les confettis, secousses et sauts disparaissent.
+
+**Emojis** : le sélecteur propose environ 400 emojis en 9 onglets, avec une recherche par mot français, insensible aux accents (`src/components/emojis.ts`). La limite reste de 3 emojis par réponse. Un test vérifie que chaque emoji proposé est accepté par la règle du serveur.
