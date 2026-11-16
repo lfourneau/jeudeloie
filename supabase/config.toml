@@ -1,0 +1,8 @@
+# Configuration minimale pour `supabase start` (développement local) et `supabase link`.
+project_id = "devine-la-question"
+
+[auth]
+enable_anonymous_sign_ins = true
+
+[api]
+schemas = ["public"]

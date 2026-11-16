@@ -1,0 +1,168 @@
+{
+  "cases": [
+    {
+      "index": 0,
+      "type": "depart"
+    },
+    {
+      "index": 1,
+      "type": "mot"
+    },
+    {
+      "index": 2,
+      "type": "nombre"
+    },
+    {
+      "index": 3,
+      "type": "emojis"
+    },
+    {
+      "index": 4,
+      "type": "tremplin"
+    },
+    {
+      "index": 5,
+      "type": "mot"
+    },
+    {
+      "index": 6,
+      "type": "dessin"
+    },
+    {
+      "index": 7,
+      "type": "nombre"
+    },
+    {
+      "index": 8,
+      "type": "coffre"
+    },
+    {
+      "index": 9,
+      "type": "emojis"
+    },
+    {
+      "index": 10,
+      "type": "mot"
+    },
+    {
+      "index": 11,
+      "type": "piege"
+    },
+    {
+      "index": 12,
+      "type": "photo"
+    },
+    {
+      "index": 13,
+      "type": "nombre"
+    },
+    {
+      "index": 14,
+      "type": "emojis"
+    },
+    {
+      "index": 15,
+      "type": "tempete"
+    },
+    {
+      "index": 16,
+      "type": "mot"
+    },
+    {
+      "index": 17,
+      "type": "dessin"
+    },
+    {
+      "index": 18,
+      "type": "coffre"
+    },
+    {
+      "index": 19,
+      "type": "nombre"
+    },
+    {
+      "index": 20,
+      "type": "emojis"
+    },
+    {
+      "index": 21,
+      "type": "double"
+    },
+    {
+      "index": 22,
+      "type": "mot"
+    },
+    {
+      "index": 23,
+      "type": "piege"
+    },
+    {
+      "index": 24,
+      "type": "photo"
+    },
+    {
+      "index": 25,
+      "type": "nombre"
+    },
+    {
+      "index": 26,
+      "type": "tremplin"
+    },
+    {
+      "index": 27,
+      "type": "emojis"
+    },
+    {
+      "index": 28,
+      "type": "piege"
+    },
+    {
+      "index": 29,
+      "type": "mot"
+    },
+    {
+      "index": 30,
+      "type": "dessin"
+    },
+    {
+      "index": 31,
+      "type": "coffre"
+    },
+    {
+      "index": 32,
+      "type": "nombre"
+    },
+    {
+      "index": 33,
+      "type": "piege"
+    },
+    {
+      "index": 34,
+      "type": "emojis"
+    },
+    {
+      "index": 35,
+      "type": "mot"
+    },
+    {
+      "index": 36,
+      "type": "tempete"
+    },
+    {
+      "index": 37,
+      "type": "photo"
+    },
+    {
+      "index": 38,
+      "type": "piege"
+    },
+    {
+      "index": 39,
+      "type": "nombre"
+    },
+    {
+      "index": 40,
+      "type": "arrivee"
+    }
+  ]
+}
